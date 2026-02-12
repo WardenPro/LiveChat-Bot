@@ -1,5 +1,4 @@
-import fs from 'fs';
-import { createReadStream } from 'fs';
+import fs, { createReadStream, promises as fsPromises } from 'fs';
 import { addMinutes } from 'date-fns';
 import { OVERLAY_PROTOCOL_VERSION } from '@livechat/overlay-protocol';
 import { createOverlayClientToken, resolveOverlayClientFromRequest } from '../../services/overlayAuth';
@@ -9,6 +8,54 @@ interface ConsumePairingBody {
   code: string;
   deviceName: string;
 }
+
+const parseRangeHeader = (rawRangeHeader: string, fileSize: number) => {
+  const normalizedRange = rawRangeHeader.split(',')[0]?.trim() || '';
+  const match = /^bytes=(\d*)-(\d*)$/i.exec(normalizedRange);
+
+  if (!match) {
+    return null;
+  }
+
+  const [, rawStart, rawEnd] = match;
+
+  if (!rawStart && !rawEnd) {
+    return null;
+  }
+
+  if (!rawStart) {
+    const suffixLength = Number.parseInt(rawEnd, 10);
+
+    if (!Number.isFinite(suffixLength) || suffixLength <= 0) {
+      return null;
+    }
+
+    const start = Math.max(fileSize - suffixLength, 0);
+    const end = fileSize - 1;
+
+    return { start, end };
+  }
+
+  const start = Number.parseInt(rawStart, 10);
+
+  if (!Number.isFinite(start) || start < 0 || start >= fileSize) {
+    return null;
+  }
+
+  let end = fileSize - 1;
+
+  if (rawEnd) {
+    const parsedEnd = Number.parseInt(rawEnd, 10);
+
+    if (!Number.isFinite(parsedEnd) || parsedEnd < start) {
+      return null;
+    }
+
+    end = Math.min(parsedEnd, fileSize - 1);
+  }
+
+  return { start, end };
+};
 
 export const OverlayRoutes = () =>
   async function (fastify: FastifyCustomInstance) {
@@ -135,8 +182,44 @@ export const OverlayRoutes = () =>
 
       await touchMediaAsset(asset.id);
 
+      const fileStat = await fsPromises.stat(asset.storagePath).catch(() => null);
+
+      if (!fileStat || fileStat.size <= 0) {
+        return reply.code(404).send({
+          error: 'media_not_found_on_disk',
+        });
+      }
+
       reply.header('Cache-Control', 'no-store');
+      reply.header('Accept-Ranges', 'bytes');
       reply.type(asset.mime);
+
+      const rangeHeader = request.headers.range;
+
+      if (typeof rangeHeader === 'string' && rangeHeader.trim() !== '') {
+        const parsedRange = parseRangeHeader(rangeHeader, fileStat.size);
+
+        if (!parsedRange) {
+          reply.header('Content-Range', `bytes */${fileStat.size}`);
+          reply.type('application/json');
+          return reply.code(416).send({
+            error: 'invalid_range',
+          });
+        }
+
+        const chunkLength = parsedRange.end - parsedRange.start + 1;
+
+        reply.code(206);
+        reply.header('Content-Range', `bytes ${parsedRange.start}-${parsedRange.end}/${fileStat.size}`);
+        reply.header('Content-Length', `${chunkLength}`);
+
+        return createReadStream(asset.storagePath, {
+          start: parsedRange.start,
+          end: parsedRange.end,
+        });
+      }
+
+      reply.header('Content-Length', `${fileStat.size}`);
 
       return createReadStream(asset.storagePath);
     });
