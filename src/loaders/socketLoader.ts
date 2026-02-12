@@ -17,6 +17,8 @@ const getTokenFromSocketHandshake = (socket) => {
   return null;
 };
 
+const RELEASE_BUSY_ERROR_CODES = new Set(['manual_stop', 'media_load_failed', 'autoplay_failed', 'render_failed']);
+
 export const loadSocket = (fastify: FastifyCustomInstance) => {
   logger.info(`[Socket] Socket loaded`);
 
@@ -88,10 +90,33 @@ export const loadSocket = (fastify: FastifyCustomInstance) => {
       });
     });
 
-    socket.on(OVERLAY_SOCKET_EVENTS.ERROR, (payload: OverlayErrorPayload) => {
+    socket.on(OVERLAY_SOCKET_EVENTS.ERROR, async (payload: OverlayErrorPayload) => {
       logger.warn(
         `[OVERLAY] Error from client ${socket.data.overlayClientId} on job ${payload?.jobId}: ${payload?.code} ${payload?.message}`,
       );
+
+      const normalizedCode = `${payload?.code || ''}`.toLowerCase().trim();
+
+      if (!RELEASE_BUSY_ERROR_CODES.has(normalizedCode)) {
+        return;
+      }
+
+      try {
+        await prisma.guild.updateMany({
+          where: {
+            id: socket.data.guildId,
+          },
+          data: {
+            busyUntil: null,
+          },
+        });
+
+        logger.info(
+          `[OVERLAY] Released busy lock for guild ${socket.data.guildId} after ${normalizedCode} (job ${payload?.jobId})`,
+        );
+      } catch (error) {
+        logger.error(error, `[OVERLAY] Failed to release busy lock for guild ${socket.data.guildId}`);
+      }
     });
 
     socket.on('disconnecting', () => {
