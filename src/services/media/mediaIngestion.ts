@@ -31,7 +31,7 @@ const PREVIOUS_COMPAT_YTDLP_FORMAT =
 const PREVIOUS_PROGRESSIVE_FIRST_COMPAT_YTDLP_FORMAT =
   'b[ext=mp4][height<=1080]/bv*[vcodec^=avc1][ext=mp4][height<=1080]+ba[ext=m4a]/b[vcodec^=avc1][ext=mp4][height<=1080]/bv*[ext=mp4][height<=1080]+ba[ext=m4a]/b[ext=mp4][height<=1080]/bv*[height<=1080]+ba/b[height<=1080]/best';
 const COMPAT_YTDLP_FORMAT =
-  'bv*[vcodec^=avc1][ext=mp4][height<=1080]+ba[ext=m4a]/b[vcodec^=avc1][ext=mp4][height<=1080]/bv*[ext=mp4][height<=1080]+ba[ext=m4a]/b[ext=mp4][height<=1080]/bv*[height<=1080]+ba/b[height<=1080]/best';
+  'bv*[vcodec^=avc1][ext=mp4][height<=480]+ba[ext=m4a]/b[vcodec^=avc1][ext=mp4][height<=480]/b[ext=mp4][height<=480]/bv*[height<=480]+ba/b[height<=480]/best';
 
 const getMaxMediaSizeBytes = () => Math.max(1, env.MEDIA_MAX_SIZE_MB) * BYTES_PER_MEGABYTE;
 
@@ -132,6 +132,7 @@ const downloadWithYtDlp = async (sourceUrl: string, tmpDir: string): Promise<str
   const outputTemplate = path.join(tmpDir, 'download.%(ext)s');
   const formatSelector = resolveYtdlpFormatSelector();
   const concurrentFragments = Math.max(1, env.YTDLP_CONCURRENT_FRAGMENTS);
+  const extractorArgs = (env.YTDLP_EXTRACTOR_ARGS || '').trim();
   const args = [
     '--no-playlist',
     '--no-progress',
@@ -144,7 +145,11 @@ const downloadWithYtDlp = async (sourceUrl: string, tmpDir: string): Promise<str
   ];
 
   if (concurrentFragments > 1) {
-    args.push('--concurrent-fragments', `${concurrentFragments}`);
+    args.push('-N', `${concurrentFragments}`);
+  }
+
+  if (extractorArgs.length > 0) {
+    args.push('--extractor-args', extractorArgs);
   }
 
   if (formatSelector.length > 0) {
