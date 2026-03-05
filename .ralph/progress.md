@@ -171,3 +171,51 @@ Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/ru
   - Useful context
     - `pnpm dev` still fails before runtime validation due an existing `file-type` export issue unrelated to US-004 changes.
 ---
+## [2026-03-05 10:17:41 CET] - US-005: Refactor Discord command loading and execution flow
+Thread: 
+Run: 20260305-090958-5834 (iteration 5)
+Run log: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-090958-5834-iter-5.log
+Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-090958-5834-iter-5.md
+- Guardrails reviewed: yes
+- No-commit run: false
+- Commit: f9c8d49 refactor(discord-loader): modularize command flow (or `none` + reason)
+- Post-commit status: `clean`
+- Verification:
+  - Command: pnpm characterization -- --update-baseline -> PASS
+  - Command: pnpm characterization -> PASS
+  - Command: pnpm lint -> PASS
+  - Command: pnpm build -> PASS
+  - Command: pnpm dev -> FAIL (missing local env vars including DATABASE_URL)
+  - Command: API_URL=http://localhost:3333 DISCORD_TOKEN=dev-token DISCORD_CLIENT_ID=dev-client DATABASE_URL=file:./sqlite.db pnpm dev -> FAIL (existing runtime import error: ERR_PACKAGE_PATH_NOT_EXPORTED from file-type)
+- Files changed:
+  - .agents/tasks/prd-livechat-refactor.json
+  - .ralph/.tmp/prompt-20260305-090958-5834-5.md
+  - .ralph/.tmp/story-20260305-090958-5834-5.json
+  - .ralph/.tmp/story-20260305-090958-5834-5.md
+  - .ralph/characterization/latest/discord-execution-flow.latest.json
+  - .ralph/characterization/latest/discord-registration.latest.json
+  - .ralph/runs/run-20260305-090958-5834-iter-4.md
+  - src/characterization/RUNBOOK.md
+  - src/characterization/baselines/discord-execution-flow.baseline.json
+  - src/characterization/baselines/discord-registration.baseline.json
+  - src/characterization/discordExecution.characterization.ts
+  - src/characterization/discordRegistration.characterization.ts
+  - src/characterization/runCharacterization.ts
+  - src/loaders/DiscordLoader.ts
+  - src/loaders/discord/commandMetadata.ts
+  - src/loaders/discord/commandRegistry.ts
+  - src/loaders/discord/interactionExecution.ts
+  - src/loaders/discord/types.ts
+- What was implemented
+  - Split Discord command loading internals into dedicated modules for registry composition, command metadata assembly, and interaction execution handling, while keeping `loadDiscord` and `loadDiscordCommandsHandler` entrypoints stable.
+  - Preserved command registration and execution behavior: command ordering, hidden-command toggle, `commandsLoaded` population, unknown-command no-op handling, and failing-command reply/followUp fallback behavior.
+  - Extended Discord characterization coverage with `/help` output verification and added a new `discord-registration` suite to lock command registration payload shape and command metadata contract.
+- **Learnings for future iterations:**
+  - Patterns discovered
+    - Loader refactors are safer when orchestration stays in the public loader file and execution/registry concerns are split into focused modules.
+  - Gotchas encountered
+    - Characterization suites that instantiate full command factories need real i18n initialization; otherwise slash command builder name validation fails.
+    - `pnpm lint` runs with `--fix` and can modify unrelated files; non-story diffs must be reverted before commit.
+  - Useful context
+    - `pnpm dev` still fails in this environment from an existing `file-type` package export/runtime mismatch unrelated to this story’s refactor.
+---
