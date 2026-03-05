@@ -22,22 +22,60 @@ export interface IngestClientRecord {
   revokedAt: Date | null;
 }
 
-const getIngestClientDelegate = (): {
-  create: (args: unknown) => Promise<unknown>;
-  findFirst: (args: unknown) => Promise<unknown>;
-  updateMany: (args: unknown) => Promise<unknown>;
-} | null => {
-  const delegate = (prisma as unknown as { ingestClient?: unknown }).ingestClient;
+interface IngestClientCreateArgs {
+  data: {
+    guildId: string;
+    label: string;
+    tokenHash: string;
+    defaultAuthorName: string;
+    defaultAuthorImage: string | null;
+    createdByDiscordUserId: string;
+  };
+}
 
-  if (!delegate || typeof delegate !== 'object') {
-    return null;
+interface IngestClientFindByTokenArgs {
+  where: {
+    tokenHash: string;
+    revokedAt: null;
+  };
+}
+
+interface IngestClientFindAnyActiveArgs {
+  where: {
+    revokedAt: null;
+  };
+  select: {
+    id: true;
+  };
+}
+
+interface IngestClientUpdateManyArgs {
+  where: Record<string, unknown>;
+  data: Record<string, unknown>;
+}
+
+interface IngestClientDelegate {
+  create(args: IngestClientCreateArgs): Promise<IngestClientRecord>;
+  findFirst(args: IngestClientFindByTokenArgs): Promise<IngestClientRecord | null>;
+  findFirst(args: IngestClientFindAnyActiveArgs): Promise<{ id: string } | null>;
+  updateMany(args: IngestClientUpdateManyArgs): Promise<{ count: number }>;
+}
+
+const isIngestClientDelegate = (value: unknown): value is IngestClientDelegate => {
+  if (!value || typeof value !== 'object') {
+    return false;
   }
 
-  return delegate as {
-    create: (args: unknown) => Promise<unknown>;
-    findFirst: (args: unknown) => Promise<unknown>;
-    updateMany: (args: unknown) => Promise<unknown>;
-  };
+  return (
+    typeof Reflect.get(value, 'create') === 'function' &&
+    typeof Reflect.get(value, 'findFirst') === 'function' &&
+    typeof Reflect.get(value, 'updateMany') === 'function'
+  );
+};
+
+const getIngestClientDelegate = (): IngestClientDelegate | null => {
+  const delegate = Reflect.get(prisma, 'ingestClient');
+  return isIngestClientDelegate(delegate) ? delegate : null;
 };
 
 export const createIngestClientToken = async (params: CreateIngestClientTokenParams) => {
@@ -50,7 +88,7 @@ export const createIngestClientToken = async (params: CreateIngestClientTokenPar
   const rawToken = generateOverlayToken();
   const tokenHash = hashOverlayToken(rawToken);
 
-  const client = (await delegate.create({
+  const client = await delegate.create({
     data: {
       guildId: params.guildId,
       label: params.label,
@@ -59,7 +97,7 @@ export const createIngestClientToken = async (params: CreateIngestClientTokenPar
       defaultAuthorImage: params.defaultAuthorImage,
       createdByDiscordUserId: params.createdByDiscordUserId,
     },
-  })) as IngestClientRecord;
+  });
 
   return {
     client,
@@ -98,12 +136,12 @@ export const resolveIngestClientFromRequest = async (
 
   const tokenHash = hashOverlayToken(token);
 
-  const client = (await delegate.findFirst({
+  const client = await delegate.findFirst({
     where: {
       tokenHash,
       revokedAt: null,
     },
-  })) as IngestClientRecord | null;
+  });
 
   if (!client) {
     return null;
@@ -149,14 +187,14 @@ export const isIngestApiEnabled = async (): Promise<boolean> => {
     return false;
   }
 
-  const activeClient = (await delegate.findFirst({
+  const activeClient = await delegate.findFirst({
     where: {
       revokedAt: null,
     },
     select: {
       id: true,
     },
-  })) as { id?: string } | null;
+  });
 
   return !!activeClient;
 };

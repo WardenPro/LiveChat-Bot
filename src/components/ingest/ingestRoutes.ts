@@ -145,7 +145,7 @@ export const IngestRoutes = () =>
         });
       }
 
-      const pairingMode = toNonEmptyString((pairingCode as { mode?: unknown }).mode) || 'NORMAL';
+      const pairingMode = toNonEmptyString(pairingCode.mode) || 'NORMAL';
       if (pairingMode === INVITE_READ_ONLY_PAIRING_MODE) {
         logger.warn(
           {
@@ -171,9 +171,8 @@ export const IngestRoutes = () =>
         },
       });
 
-      const authorName =
-        toNonEmptyString((pairingCode as { authorName?: unknown }).authorName) || DEFAULT_INGEST_AUTHOR_NAME;
-      const authorImage = toNonEmptyString((pairingCode as { authorImage?: unknown }).authorImage);
+      const authorName = toNonEmptyString(pairingCode.authorName) || DEFAULT_INGEST_AUTHOR_NAME;
+      const authorImage = toNonEmptyString(pairingCode.authorImage);
       const deviceName = requestedDeviceName || `${DEFAULT_INGEST_DEVICE_PREFIX}-${authorName}`;
 
       await revokeIngestClientsForGuildLabel(pairingCode.guildId, deviceName);
@@ -264,7 +263,7 @@ export const IngestRoutes = () =>
         });
       }
 
-      let mediaAsset: any = null;
+      let mediaAsset: Awaited<ReturnType<typeof ingestMediaFromSource>> = null;
       let jobText = buildMediaOverlayTextPayload({
         text,
         startOffsetSec: mediaStartOffsetSec,

@@ -23,6 +23,7 @@ const ensureCharacterizationProcessEnv = () => {
 const loadSuites = async () => {
   const { runRestRouteDomainsCharacterization } = await import('./restRouteDomains.characterization');
   const { runRestOverlayPairConsumeCharacterization } = await import('./restOverlayPairConsume.characterization');
+  const { runOverlayAuthCharacterization } = await import('./overlayAuth.characterization');
   const { runAdminIngestClientValidationCharacterization } = await import(
     './adminIngestClientValidation.characterization'
   );
@@ -41,6 +42,10 @@ const loadSuites = async () => {
     {
       name: 'rest-overlay-pair-consume',
       run: runRestOverlayPairConsumeCharacterization,
+    },
+    {
+      name: 'overlay-auth',
+      run: runOverlayAuthCharacterization,
     },
     {
       name: 'admin-ingest-client-validation',

@@ -197,7 +197,7 @@ export const runRestOverlayPairConsumeCharacterization = async () => {
     API_URL: 'http://localhost:4000',
   });
 
-  const now = new Date('2026-03-05T10:00:00.000Z');
+  const now = new Date();
 
   const state: ConsumeCharacterizationState = {
     pairingCodes: [

@@ -1,10 +1,10 @@
-import { hashOverlayToken } from '../../services/overlayAuth';
-import { parseRequestField } from '../../services/validation/requestParsing';
 import {
   buildSafeErrorLogContext,
   createSocketAuthOperationalError,
   mapErrorToSocketAuthOutput,
 } from '../../services/errors/runtimeErrorHandling';
+import { resolveOverlayAuthFromToken } from '../../services/overlayAuth';
+import { parseRequestField } from '../../services/validation/requestParsing';
 
 import type { OverlaySocket, OverlaySocketAuthContext, OverlaySocketClientRecord } from './types';
 import { normalizeOverlaySessionMode, toNonEmptyString } from './valueUtils';
@@ -16,17 +16,6 @@ const getTokenFromSocketHandshake = (socket: OverlaySocket): string | null => {
   }
 
   return parseRequestField(socket.handshake?.query, 'token', toNonEmptyString) || null;
-};
-
-const resolveOverlayClientByToken = async (token: string): Promise<OverlaySocketClientRecord | null> => {
-  const tokenHash = hashOverlayToken(token);
-
-  return (await prisma.overlayClient.findFirst({
-    where: {
-      tokenHash,
-      revokedAt: null,
-    },
-  })) as OverlaySocketClientRecord | null;
 };
 
 const buildSocketAuthContext = (socket: OverlaySocket, client: OverlaySocketClientRecord): OverlaySocketAuthContext => {
@@ -62,27 +51,22 @@ export const registerOverlaySocketAuthentication = (fastify: FastifyCustomInstan
   fastify.io.use(async (socket, next) => {
     try {
       const token = getTokenFromSocketHandshake(socket);
+      const authResult = await resolveOverlayAuthFromToken(token, 'socket_handshake');
 
-      if (!token) {
+      if (authResult.kind !== 'authenticated') {
+        const authFailureCode = authResult.kind === 'missing_token' ? 'missing_token' : 'invalid_token';
         const mapped = forwardSocketAuthError(
-          createSocketAuthOperationalError('missing_token', { socketId: socket.id }),
+          createSocketAuthOperationalError(authFailureCode, { socketId: socket.id }),
           next,
         );
-        logger.warn({ socketId: socket.id, category: mapped.category }, '[OVERLAY] Socket auth failed: missing token');
+        logger.warn(
+          { socketId: socket.id, category: mapped.category },
+          `[OVERLAY] Socket auth failed: ${authFailureCode.replace('_', ' ')}`,
+        );
         return;
       }
 
-      const client = await resolveOverlayClientByToken(token);
-
-      if (!client) {
-        const mapped = forwardSocketAuthError(
-          createSocketAuthOperationalError('invalid_token', { socketId: socket.id }),
-          next,
-        );
-        logger.warn({ socketId: socket.id, category: mapped.category }, '[OVERLAY] Socket auth failed: invalid token');
-        return;
-      }
-
+      const client = authResult.client;
       const context = buildSocketAuthContext(socket, client);
       applySocketAuthContext(socket, context);
 

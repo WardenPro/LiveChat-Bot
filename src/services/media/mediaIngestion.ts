@@ -8,6 +8,7 @@ import fetch from 'node-fetch';
 import mime from 'mime-types';
 import { addHours } from 'date-fns';
 import { MediaAssetKind, MediaAssetStatus } from '../prisma/prismaEnums';
+import { getRuntimeTikTokCookie } from '../runtimeSettings';
 import {
   buildMediaOutputBasePath,
   ensureMediaStorageDir,
@@ -21,7 +22,6 @@ import {
   pickMostRelevantMediaError,
   toMediaIngestionError,
 } from './mediaErrors';
-import { getRuntimeTikTokCookie } from '../runtimeSettings';
 import { normalizeDownloadedMedia } from './mediaTranscode';
 import { buildSourceHash, canonicalizeSourceUrl, resolveMediaSource } from './mediaSourceResolver';
 
@@ -36,6 +36,33 @@ const PREVIOUS_PROGRESSIVE_FIRST_COMPAT_YTDLP_FORMAT =
 const COMPAT_YTDLP_FORMAT =
   'bv*[vcodec^=avc1][ext=mp4][height<=1080]+ba[ext=m4a]/b[vcodec^=avc1][ext=mp4][height<=1080]/bv*[ext=mp4][height<=1080]+ba[ext=m4a]/b[ext=mp4][height<=1080]/bv*[height<=1080]+ba/b[height<=1080]/best';
 const YOUTUBE_RELAXED_YTDLP_FORMAT = 'b/bv*+ba/best';
+
+export interface MediaIngestionRequest {
+  url?: string | null;
+  media?: string | null;
+  forceRefresh?: boolean;
+}
+
+export interface IngestedMediaAsset {
+  id: string;
+  sourceHash: string;
+  sourceUrl: string;
+  kind: string;
+  mime: string;
+  durationSec: number | null;
+  width: number | null;
+  height: number | null;
+  isVertical: boolean;
+  storagePath: string;
+  sizeBytes: number;
+  status: string;
+  error: string | null;
+  lastAccessedAt: Date;
+  expiresAt: Date;
+  createdAt: Date;
+}
+
+export type MediaIngestionResult = IngestedMediaAsset | null;
 
 const getMaxMediaSizeBytes = () => Math.max(1, env.MEDIA_MAX_SIZE_MB) * BYTES_PER_MEGABYTE;
 
@@ -357,11 +384,19 @@ const downloadHttpResponseToTempFile = async (params: {
     );
   }
 
+  if (typeof Reflect.get(stream, Symbol.asyncIterator) !== 'function') {
+    throw new MediaIngestionError(
+      'DOWNLOAD_FAILED',
+      'Unable to read media stream',
+      `HTTP response stream is not iterable for ${params.sourceUrl}`,
+    );
+  }
+
   let downloadedBytes = 0;
   const outputFile = createWriteStream(outputPath);
 
   try {
-    for await (const chunk of stream as AsyncIterable<Buffer>) {
+    for await (const chunk of stream) {
       const bufferChunk = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
       downloadedBytes += bufferChunk.length;
 
@@ -380,9 +415,9 @@ const downloadHttpResponseToTempFile = async (params: {
     outputFile.end();
     await once(outputFile, 'close');
   } catch (error) {
-    const abortableStream = stream as unknown as { destroy?: () => void };
-    if (typeof abortableStream.destroy === 'function') {
-      abortableStream.destroy();
+    const destroy = Reflect.get(stream, 'destroy');
+    if (typeof destroy === 'function') {
+      destroy.call(stream);
     }
     outputFile.destroy();
     await fsPromises.rm(outputPath, { force: true }).catch(() => undefined);
@@ -400,15 +435,15 @@ const downloadHttpResponseToTempFile = async (params: {
 };
 
 const extractTikTokSetCookieHeaders = (response: Awaited<ReturnType<typeof fetch>>) => {
-  const responseHeaders = response.headers as unknown as {
-    get: (name: string) => string | null;
-    raw?: () => Record<string, string[]>;
-  };
+  const rawHeadersAccessor = Reflect.get(response.headers, 'raw');
 
-  if (typeof responseHeaders.raw === 'function') {
-    const rawHeaders = responseHeaders.raw();
-    if (Array.isArray(rawHeaders['set-cookie']) && rawHeaders['set-cookie'].length > 0) {
-      return rawHeaders['set-cookie'];
+  if (typeof rawHeadersAccessor === 'function') {
+    const rawHeaders = rawHeadersAccessor.call(response.headers);
+    if (rawHeaders && typeof rawHeaders === 'object') {
+      const setCookie = Reflect.get(rawHeaders, 'set-cookie');
+      if (Array.isArray(setCookie) && setCookie.length > 0) {
+        return setCookie.filter((header) => typeof header === 'string');
+      }
     }
   }
 
@@ -575,13 +610,17 @@ const isLikelyTikTokAuthRequiredFromPageHtml = (html: string): boolean => {
   const hasEmptyVideoPayload = !!videoRecord && Object.keys(videoRecord).length === 0;
   const createTime = asNonEmptyString(itemStruct.createTime);
   const isPrivate = itemStruct.privateItem === true || itemStruct.secret === true || itemStruct.forFriend === true;
-  const isClassified = itemStruct.isContentClassified === true || asNonEmptyString(itemStruct.ContentClassificationReason);
+  const isClassified =
+    itemStruct.isContentClassified === true || asNonEmptyString(itemStruct.ContentClassificationReason);
 
   if (isPrivate) {
     return true;
   }
 
-  return (hasEmptyVideoPayload && createTime === '0' && !!isClassified) || (hasEmptyVideoPayload && hasTikTokAuthWallTextHints(html));
+  return (
+    (hasEmptyVideoPayload && createTime === '0' && !!isClassified) ||
+    (hasEmptyVideoPayload && hasTikTokAuthWallTextHints(html))
+  );
 };
 
 const isLikelyTikTokAuthRequiredFromEmbedHtml = (html: string): boolean => {
@@ -1975,13 +2014,14 @@ const ingestFromSourceUrlInternal = async (
   options?: {
     forceRefresh?: boolean;
   },
-) => {
+): Promise<IngestedMediaAsset> => {
   const forceRefresh = options?.forceRefresh === true;
   const cached = forceRefresh ? null : await getReadyCachedMediaAsset(sourceHash);
 
   if (cached) {
     logger.info(`[MEDIA] Cache hit ${sourceHash.slice(0, 8)} (${sanitizeUrlForLog(sourceUrl)})`);
-    return touchMediaAsset(cached.id);
+    const touchedAsset = await touchMediaAsset(cached.id);
+    return touchedAsset || cached;
   }
 
   if (forceRefresh) {
@@ -2029,14 +2069,15 @@ const ingestFromSourceUrlInternal = async (
   }
 };
 
-const ingestFromLocalFileInternal = async (filePath: string, virtualSource: string) => {
+const ingestFromLocalFileInternal = async (filePath: string, virtualSource: string): Promise<IngestedMediaAsset> => {
   const canonicalSource = canonicalizeSourceUrl(virtualSource);
   const sourceHash = buildSourceHash(canonicalSource);
 
   const cached = await getReadyCachedMediaAsset(sourceHash);
 
   if (cached) {
-    return touchMediaAsset(cached.id);
+    const touchedAsset = await touchMediaAsset(cached.id);
+    return touchedAsset || cached;
   }
 
   await upsertProcessingAsset(sourceHash, canonicalSource);
@@ -2065,11 +2106,7 @@ const ingestFromLocalFileInternal = async (filePath: string, virtualSource: stri
   }
 };
 
-export const ingestMediaFromSource = async (params: {
-  url?: string | null;
-  media?: string | null;
-  forceRefresh?: boolean;
-}) => {
+export const ingestMediaFromSource = async (params: MediaIngestionRequest): Promise<MediaIngestionResult> => {
   const resolvedSource = await resolveMediaSource(params);
 
   if (!resolvedSource) {
@@ -2081,6 +2118,9 @@ export const ingestMediaFromSource = async (params: {
   });
 };
 
-export const ingestMediaFromLocalFile = async (filePath: string, virtualSource: string) => {
+export const ingestMediaFromLocalFile = async (
+  filePath: string,
+  virtualSource: string,
+): Promise<IngestedMediaAsset> => {
   return ingestFromLocalFileInternal(filePath, virtualSource);
 };

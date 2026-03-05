@@ -1,6 +1,7 @@
 import { startCase } from 'lodash';
 
-type DomainRoutesFactory = () => unknown;
+type DomainRoutesPlugin = (fastify: FastifyCustomInstance) => Promise<void>;
+type DomainRoutesFactory = () => DomainRoutesPlugin;
 
 interface RegisterDomainRoutesParams {
   fastify: FastifyCustomInstance;
@@ -9,7 +10,14 @@ interface RegisterDomainRoutesParams {
 }
 
 export const registerDomainRoutes = ({ fastify, prefix, routes }: RegisterDomainRoutesParams) => {
-  fastify.register(routes() as any, { prefix });
+  const registerPlugin = routes();
+
+  fastify.register(
+    async (instance) => {
+      await registerPlugin(instance as FastifyCustomInstance);
+    },
+    { prefix },
+  );
 
   const routeName = startCase(prefix.substring(1).replaceAll('/', ' '));
   logger.info(`[REST] ${routeName} Routes loaded (${prefix})`);

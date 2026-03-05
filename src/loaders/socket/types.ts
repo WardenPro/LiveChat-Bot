@@ -1,16 +1,13 @@
 import type { Socket } from 'socket.io';
+import type { OverlayClientRecord } from '../../services/overlayAuth';
 import type { OverlayPeerInfo, OverlaySessionMode } from '@livechat/overlay-protocol';
 
 export type OverlaySocket = Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>;
 
-export interface OverlaySocketClientRecord {
-  id: string;
-  guildId: string;
-  label: string;
-  sessionMode?: unknown;
-  defaultAuthorName?: unknown;
-  defaultAuthorImage?: unknown;
-}
+export type OverlaySocketClientRecord = Pick<
+  OverlayClientRecord,
+  'id' | 'guildId' | 'label' | 'sessionMode' | 'defaultAuthorName' | 'defaultAuthorImage'
+>;
 
 export interface OverlayPlaybackStateUpdate {
   guildId: string;

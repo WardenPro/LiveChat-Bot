@@ -1,0 +1,46 @@
+{
+  "bearerAuth": {
+    "kind": "authenticated",
+    "tokenSource": "authorization_header",
+    "clientShape": {
+      "createdAt": "date",
+      "createdByDiscordUserId": "string",
+      "defaultAuthorImage": "string",
+      "defaultAuthorName": "string",
+      "guildId": "string",
+      "id": "string",
+      "label": "string",
+      "lastSeenAt": "null",
+      "revokedAt": "null",
+      "sessionMode": "string",
+      "tokenHash": "string"
+    }
+  },
+  "queryAuth": {
+    "kind": "authenticated",
+    "tokenSource": "query_string"
+  },
+  "missingAuth": {
+    "kind": "missing_token"
+  },
+  "invalidAuth": {
+    "kind": "invalid_token",
+    "tokenSource": "authorization_header"
+  },
+  "socketAuth": {
+    "kind": "authenticated",
+    "tokenSource": "socket_handshake"
+  },
+  "legacyWrapper": {
+    "resolved": true,
+    "guildId": "guild-auth-1",
+    "missingReturnsNull": true
+  },
+  "lookupTokenHashes": [
+    "e88971cfc6df4aba0e04fc6a4eb0c7b856bfaf398995fada9cbc470c3cacfa12",
+    "e88971cfc6df4aba0e04fc6a4eb0c7b856bfaf398995fada9cbc470c3cacfa12",
+    "203f5fbeb473b3ec2d89696eb0d4046099ce1757b075f9dd15ba56f557abb902",
+    "e88971cfc6df4aba0e04fc6a4eb0c7b856bfaf398995fada9cbc470c3cacfa12",
+    "e88971cfc6df4aba0e04fc6a4eb0c7b856bfaf398995fada9cbc470c3cacfa12"
+  ]
+}

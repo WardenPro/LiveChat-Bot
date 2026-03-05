@@ -1,7 +1,11 @@
 import fs, { createReadStream } from 'fs';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { addMinutes } from 'date-fns';
-import { createOverlayClientToken, resolveOverlayClientFromRequest } from '../../services/overlayAuth';
+import {
+  createOverlayClientToken,
+  resolveOverlayAuthFromRequest,
+  type OverlayAuthResolution,
+} from '../../services/overlayAuth';
 import { touchMediaAsset } from '../../services/media/mediaCache';
 import { ingestMediaFromSource } from '../../services/media/mediaIngestion';
 import { MediaIngestionError, toMediaIngestionError } from '../../services/media/mediaErrors';
@@ -48,8 +52,11 @@ const toOptionalInt = parseOptionalInt;
 const toBooleanFlag = parseBooleanFlag;
 
 type MemeBoardListItem = Awaited<ReturnType<typeof listMemeBoardItems>>['items'][number];
+type MemeBoardMutationItem = NonNullable<Awaited<ReturnType<typeof addToMemeBoard>>['item']>;
+type OverlayMemeBoardPayloadItem = MemeBoardListItem | MemeBoardMutationItem;
+type OverlayAuthenticatedRequest = Extract<OverlayAuthResolution, { kind: 'authenticated' }>;
 
-const toOverlayMemeBoardItemPayload = (item: MemeBoardListItem) => {
+const toOverlayMemeBoardItemPayload = (item: OverlayMemeBoardPayloadItem) => {
   return {
     id: item.id,
     guildId: item.guildId,
@@ -190,6 +197,22 @@ const streamAssetToReply = async (
   return createReadStream(asset.storagePath);
 };
 
+const authorizeOverlayRequest = async (
+  request: FastifyRequest,
+  reply: FastifyReply,
+): Promise<OverlayAuthenticatedRequest | null> => {
+  const authResult = await resolveOverlayAuthFromRequest(request);
+
+  if (authResult.kind !== 'authenticated') {
+    await reply.code(401).send({
+      error: 'unauthorized',
+    });
+    return null;
+  }
+
+  return authResult;
+};
+
 export const OverlayRoutes = () =>
   async function (fastify: FastifyCustomInstance) {
     fastify.post<{ Body: ConsumePairingBody }>('/pair/consume', async (request, reply) => {
@@ -243,12 +266,10 @@ export const OverlayRoutes = () =>
         },
       });
 
-      const authorName = toNonEmptyString((pairingCode as { authorName?: unknown }).authorName);
-      const authorImage = toNonEmptyString((pairingCode as { authorImage?: unknown }).authorImage);
-      const createdByDiscordUserId = toNonEmptyString(
-        (pairingCode as { createdByDiscordUserId?: unknown }).createdByDiscordUserId,
-      );
-      const pairingMode = toNonEmptyString((pairingCode as { mode?: unknown }).mode) || 'NORMAL';
+      const authorName = toNonEmptyString(pairingCode.authorName);
+      const authorImage = toNonEmptyString(pairingCode.authorImage);
+      const createdByDiscordUserId = toNonEmptyString(pairingCode.createdByDiscordUserId);
+      const pairingMode = toNonEmptyString(pairingCode.mode) || 'NORMAL';
       const isInviteReadOnly = pairingMode === INVITE_READ_ONLY_PAIRING_MODE;
       const deviceName = requestedDeviceName || `${DEFAULT_OVERLAY_DEVICE_PREFIX}-${authorName || 'User'}`;
 
@@ -284,12 +305,9 @@ export const OverlayRoutes = () =>
     });
 
     fastify.get('/config', async (request, reply) => {
-      const authResult = await resolveOverlayClientFromRequest(request);
-
+      const authResult = await authorizeOverlayRequest(request, reply);
       if (!authResult) {
-        return reply.code(401).send({
-          error: 'unauthorized',
-        });
+        return;
       }
 
       const guild = await prisma.guild.findFirst({
@@ -308,12 +326,9 @@ export const OverlayRoutes = () =>
     });
 
     fastify.get<{ Params: { assetId: string } }>('/media/:assetId', async (request, reply) => {
-      const authResult = await resolveOverlayClientFromRequest(request);
-
+      const authResult = await authorizeOverlayRequest(request, reply);
       if (!authResult) {
-        return reply.code(401).send({
-          error: 'unauthorized',
-        });
+        return;
       }
 
       const asset = await prisma.mediaAsset.findUnique({
@@ -367,12 +382,9 @@ export const OverlayRoutes = () =>
     });
 
     fastify.get<{ Querystring: MemeBoardItemsQuery }>('/meme-board/items', async (request, reply) => {
-      const authResult = await resolveOverlayClientFromRequest(request);
-
+      const authResult = await authorizeOverlayRequest(request, reply);
       if (!authResult) {
-        return reply.code(401).send({
-          error: 'unauthorized',
-        });
+        return;
       }
 
       const list = await listMemeBoardItems({
@@ -391,12 +403,9 @@ export const OverlayRoutes = () =>
     });
 
     fastify.post<{ Body: MemeBoardItemCreateBody }>('/meme-board/items', async (request, reply) => {
-      const authResult = await resolveOverlayClientFromRequest(request);
-
+      const authResult = await authorizeOverlayRequest(request, reply);
       if (!authResult) {
-        return reply.code(401).send({
-          error: 'unauthorized',
-        });
+        return;
       }
 
       const url = parseBodyNonEmptyString(request.body, 'url');
@@ -411,9 +420,7 @@ export const OverlayRoutes = () =>
         });
       }
 
-      let mediaAsset: {
-        id: string;
-      };
+      let mediaAsset: Awaited<ReturnType<typeof ingestMediaFromSource>>;
 
       try {
         mediaAsset = await ingestMediaFromSource({
@@ -429,6 +436,10 @@ export const OverlayRoutes = () =>
         });
       }
 
+      if (!mediaAsset) {
+        throw new Error('media_asset_not_resolved');
+      }
+
       let result: Awaited<ReturnType<typeof addToMemeBoard>>;
       try {
         result = await addToMemeBoard({
@@ -436,12 +447,8 @@ export const OverlayRoutes = () =>
           mediaAssetId: mediaAsset.id,
           title,
           message,
-          createdByDiscordUserId: toNonEmptyString(
-            (authResult.client as { createdByDiscordUserId?: unknown }).createdByDiscordUserId,
-          ),
-          createdByName:
-            toNonEmptyString((authResult.client as { defaultAuthorName?: unknown }).defaultAuthorName) ||
-            authResult.client.label,
+          createdByDiscordUserId: toNonEmptyString(authResult.client.createdByDiscordUserId),
+          createdByName: toNonEmptyString(authResult.client.defaultAuthorName) || authResult.client.label,
         });
       } catch (error) {
         if (error instanceof MediaIngestionError) {
@@ -463,17 +470,14 @@ export const OverlayRoutes = () =>
 
       return reply.send({
         created: result.created,
-        item: toOverlayMemeBoardItemPayload(result.item as MemeBoardListItem),
+        item: toOverlayMemeBoardItemPayload(result.item),
       });
     });
 
     fastify.get<{ Params: { assetId: string } }>('/meme-board/media/:assetId', async (request, reply) => {
-      const authResult = await resolveOverlayClientFromRequest(request);
-
+      const authResult = await authorizeOverlayRequest(request, reply);
       if (!authResult) {
-        return reply.code(401).send({
-          error: 'unauthorized',
-        });
+        return;
       }
 
       const item = await prisma.memeBoardItem.findFirst({
@@ -496,12 +500,9 @@ export const OverlayRoutes = () =>
     });
 
     fastify.delete<{ Params: { itemId: string } }>('/meme-board/items/:itemId', async (request, reply) => {
-      const authResult = await resolveOverlayClientFromRequest(request);
-
+      const authResult = await authorizeOverlayRequest(request, reply);
       if (!authResult) {
-        return reply.code(401).send({
-          error: 'unauthorized',
-        });
+        return;
       }
 
       const result = await removeMemeBoardItem({
@@ -517,12 +518,9 @@ export const OverlayRoutes = () =>
     fastify.patch<{ Params: { itemId: string }; Body: MemeBoardItemUpdateBody }>(
       '/meme-board/items/:itemId',
       async (request, reply) => {
-        const authResult = await resolveOverlayClientFromRequest(request);
-
+        const authResult = await authorizeOverlayRequest(request, reply);
         if (!authResult) {
-          return reply.code(401).send({
-            error: 'unauthorized',
-          });
+          return;
         }
 
         const hasTitle = Object.prototype.hasOwnProperty.call(request.body || {}, 'title');
