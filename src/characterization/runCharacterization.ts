@@ -31,6 +31,7 @@ const loadSuites = async () => {
   const { runDiscordRegistrationCharacterization } = await import('./discordRegistration.characterization');
   const { runMediaLifecycleCharacterization } = await import('./mediaLifecycle.characterization');
   const { runErrorHandlingCharacterization } = await import('./errorHandling.characterization');
+  const { runEnvParsingCharacterization } = await import('./envParsing.characterization');
 
   return [
     {
@@ -64,6 +65,10 @@ const loadSuites = async () => {
     {
       name: 'error-handling',
       run: runErrorHandlingCharacterization,
+    },
+    {
+      name: 'env-parsing',
+      run: runEnvParsingCharacterization,
     },
   ];
 };

@@ -1,5 +1,18 @@
+import 'dotenv/config';
 import { runServer } from './server';
-import { env } from './services/env';
+
+interface EnvironmentValidationErrorLike {
+  invalidKeys: string[];
+}
+
+const isEnvironmentValidationErrorLike = (error: unknown): error is EnvironmentValidationErrorLike => {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const invalidKeys = (error as { invalidKeys?: unknown }).invalidKeys;
+  return Array.isArray(invalidKeys) && invalidKeys.every((value) => typeof value === 'string');
+};
 
 const logBootError = (message: string, error: unknown) => {
   if (global.logger) {
@@ -21,6 +34,8 @@ process.on('uncaughtException', (error) => {
 });
 
 const bootstrap = async () => {
+  const { env } = await import('./services/env');
+
   global.env = env;
   //@ts-ignore
   process.env = env;
@@ -37,6 +52,12 @@ const bootstrap = async () => {
 };
 
 void bootstrap().catch((error) => {
-  logBootError('[BOOT] Startup failed', error);
+  if (isEnvironmentValidationErrorLike(error)) {
+    const invalidKeysSuffix = error.invalidKeys.length > 0 ? `: ${error.invalidKeys.join(', ')}` : '';
+    logBootError(`[BOOT] Invalid environment configuration${invalidKeysSuffix}`, error);
+  } else {
+    logBootError('[BOOT] Startup failed', error);
+  }
+
   process.exit(1);
 });

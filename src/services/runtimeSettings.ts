@@ -1,6 +1,5 @@
 import { promises as fsPromises } from 'fs';
 import path from 'path';
-import { env } from './env';
 
 const normalizeTikTokCookie = (value: unknown): string => {
   if (typeof value !== 'string') {
@@ -13,7 +12,7 @@ const normalizeTikTokCookie = (value: unknown): string => {
 const ENV_FILE_PATH = path.resolve(process.cwd(), '.env');
 
 const runtimeSettings = {
-  tiktokCookie: normalizeTikTokCookie(env.TIKTOK_COOKIE),
+  tiktokCookie: normalizeTikTokCookie(process.env.TIKTOK_COOKIE),
 };
 
 const escapeEnvDoubleQuotedValue = (value: string): string => {

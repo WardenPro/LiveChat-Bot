@@ -13,6 +13,7 @@ This runbook defines the pre-refactor safety loop introduced for `US-001`.
 - Discord command registration contract: command list and registration payload shape
 - Media lifecycle: cache touch, non-persistent budget eviction, expired/stale purge behavior
 - Runtime error handling: centralized HTTP mapping and sensitive log redaction behavior
+- Environment parsing: production-like output parity and deterministic invalid-config rejection
 
 Baselines are versioned in `src/characterization/baselines/*.baseline.json`.
 Latest run artifacts are written to `.ralph/characterization/latest/*.latest.json`.
