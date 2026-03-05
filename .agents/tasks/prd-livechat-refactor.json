@@ -487,7 +487,7 @@
     {
       "id": "US-013",
       "title": "Align naming and formatting conventions across modules",
-      "status": "in_progress",
+      "status": "done",
       "dependsOn": [
         "US-010"
       ],
@@ -500,13 +500,13 @@
         "Update refactor guide notes for future contributors with examples of accepted conventions."
       ],
       "startedAt": "2026-03-05T12:22:23.830501+00:00",
-      "completedAt": null,
-      "updatedAt": "2026-03-05T12:22:23.830615+00:00"
+      "completedAt": "2026-03-05T12:32:26.219221+00:00",
+      "updatedAt": "2026-03-05T12:32:26.219125+00:00"
     },
     {
       "id": "US-014",
       "title": "Execute full backward-compatibility verification and release checklist",
-      "status": "open",
+      "status": "in_progress",
       "dependsOn": [
         "US-007",
         "US-008",
@@ -521,7 +521,10 @@
         "Example: sampled production-like workflows (overlay pairing, ingest pairing, command-driven playback) match baseline outcomes.",
         "Negative case: any detected contract drift blocks completion until explicitly resolved or approved.",
         "Publish a release checklist and residual-risk note that lists anything intentionally not validated."
-      ]
+      ],
+      "startedAt": "2026-03-05T12:32:28.290151+00:00",
+      "completedAt": null,
+      "updatedAt": "2026-03-05T12:32:28.290292+00:00"
     }
   ]
 }
