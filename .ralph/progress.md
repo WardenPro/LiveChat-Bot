@@ -127,3 +127,47 @@ Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/ru
   - Useful context
     - The existing `pnpm dev` runtime failure (`ERR_PACKAGE_PATH_NOT_EXPORTED` from `file-type`) remains unrelated to US-003 and still reproduces.
 ---
+## [2026-03-05 10:03:40 CET] - US-004: Refactor socket loader lifecycle with strict boundaries
+Thread: 
+Run: 20260305-090958-5834 (iteration 4)
+Run log: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-090958-5834-iter-4.log
+Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-090958-5834-iter-4.md
+- Guardrails reviewed: yes
+- No-commit run: false
+- Commit: 2834ebd refactor(socket): split socket lifecycle modules (or `none` + reason)
+- Post-commit status: `clean`
+- Verification:
+  - Command: pnpm characterization -- --update-baseline -> PASS
+  - Command: pnpm characterization -> PASS
+  - Command: pnpm lint -> PASS
+  - Command: pnpm build -> PASS
+  - Command: API_URL=http://localhost:3333 DISCORD_TOKEN=test DISCORD_CLIENT_ID=test DATABASE_URL=file:./sqlite.db pnpm dev -> FAIL (existing runtime import error: ERR_PACKAGE_PATH_NOT_EXPORTED from file-type)
+- Files changed:
+  - .agents/tasks/prd-livechat-refactor.json
+  - .ralph/.tmp/prompt-20260305-090958-5834-4.md
+  - .ralph/.tmp/story-20260305-090958-5834-4.json
+  - .ralph/.tmp/story-20260305-090958-5834-4.md
+  - .ralph/characterization/latest/socket-lifecycle.latest.json
+  - .ralph/runs/run-20260305-090958-5834-iter-3.md
+  - src/characterization/baselines/socket-lifecycle.baseline.json
+  - src/characterization/socketLifecycle.characterization.ts
+  - src/loaders/socketLoader.ts
+  - src/loaders/socket/socketAuthentication.ts
+  - src/loaders/socket/socketConnectionState.ts
+  - src/loaders/socket/socketEventDispatch.ts
+  - src/loaders/socket/types.ts
+  - src/loaders/socket/valueUtils.ts
+  - .ralph/progress.md
+- What was implemented
+  - Split `socketLoader` internals into explicit authentication, connection-state, and event-dispatch modules under `src/loaders/socket/*` with typed interfaces for scheduler, socket, and lifecycle boundaries.
+  - Kept overlay protocol events and payload contract unchanged by continuing to emit/listen through `OVERLAY_SOCKET_EVENTS` and preserving existing normalization/rejection behavior.
+  - Extended socket characterization coverage and baseline to lock invalid token rejection (`invalid_token`) and malformed playback payload normalization semantics.
+- **Learnings for future iterations:**
+  - Patterns discovered
+    - Loader refactors stay low-risk when the entrypoint only orchestrates modules and side-effect logic remains in thin domain-specific helpers.
+  - Gotchas encountered
+    - `pnpm lint` (`--fix`) can touch unrelated legacy files; restoring non-story files to `HEAD` keeps strict scope boundaries.
+    - Commitlint enforces body line length (<=100 chars); long explanatory lines must be wrapped.
+  - Useful context
+    - `pnpm dev` still fails before runtime validation due an existing `file-type` export issue unrelated to US-004 changes.
+---
