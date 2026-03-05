@@ -128,7 +128,7 @@
     {
       "id": "US-002",
       "title": "Create module inventory and missing-test gate",
-      "status": "in_progress",
+      "status": "done",
       "dependsOn": [
         "US-001"
       ],
@@ -141,13 +141,13 @@
         "Matrix output is machine-readable enough for CI logs and developer troubleshooting."
       ],
       "startedAt": "2026-03-05T13:05:18.328647+00:00",
-      "completedAt": null,
-      "updatedAt": "2026-03-05T13:05:18.328810+00:00"
+      "completedAt": "2026-03-05T13:15:06.840090+00:00",
+      "updatedAt": "2026-03-05T13:15:06.839983+00:00"
     },
     {
       "id": "US-003",
       "title": "Backfill tests for env configuration modules",
-      "status": "open",
+      "status": "in_progress",
       "dependsOn": [
         "US-001",
         "US-002"
@@ -159,7 +159,10 @@
         "Example: missing optional variable uses configured default and yields the same resulting runtime config value.",
         "Negative case: invalid numeric or enum env value returns the same startup validation error category as current behavior.",
         "All added tests are counted as covered by pnpm test:unit:matrix."
-      ]
+      ],
+      "startedAt": "2026-03-05T13:15:08.918002+00:00",
+      "completedAt": null,
+      "updatedAt": "2026-03-05T13:15:08.918181+00:00"
     },
     {
       "id": "US-004",
