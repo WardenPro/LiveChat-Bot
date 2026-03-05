@@ -1,0 +1,38 @@
+{
+  "unknownCommandInteraction": {
+    "replyCallCount": 0,
+    "followUpCallCount": 0
+  },
+  "failingCommandBeforeReply": {
+    "replyCallCount": 1,
+    "followUpCallCount": 0,
+    "replyShape": {
+      "embeds": [
+        {
+          "data": {
+            "color": "number",
+            "description": "string",
+            "title": "string"
+          }
+        }
+      ],
+      "ephemeral": "boolean"
+    }
+  },
+  "failingCommandAfterReply": {
+    "replyCallCount": 0,
+    "followUpCallCount": 1,
+    "followUpShape": {
+      "embeds": [
+        {
+          "data": {
+            "color": "number",
+            "description": "string",
+            "title": "string"
+          }
+        }
+      ],
+      "ephemeral": "boolean"
+    }
+  }
+}

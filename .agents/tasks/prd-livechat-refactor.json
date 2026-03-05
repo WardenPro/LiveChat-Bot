@@ -1,0 +1,491 @@
+{
+  "version": 1,
+  "project": "LiveChat-Bot Professional Refactor and Hardening",
+  "overview": "Refactor the existing LiveChat-Bot codebase for professional maintainability, modularity, security, and correctness while preserving all observable behavior and backward compatibility across REST, Socket.IO, Discord commands, environment contracts, and database behavior.",
+  "goals": [
+    "Restructure the entire codebase into clear, cohesive modules with stable boundaries and minimal coupling.",
+    "Improve readability and maintainability through consistent naming, file organization, and conventions.",
+    "Strengthen security posture with stricter input validation, safer error handling, and secure runtime defaults.",
+    "Increase correctness with explicit TypeScript typing and stricter compiler/linting guardrails.",
+    "Keep full backward compatibility with no breaking behavior changes.",
+    "Use characterization coverage to lock current behavior before and during refactor slices.",
+    "Apply patch-level dependency hygiene to reduce risk while avoiding disruptive upgrades."
+  ],
+  "nonGoals": [
+    "No feature additions or product behavior redesign.",
+    "No changes to public API contracts, Socket event contracts, Discord command UX, or environment variable names/semantics.",
+    "No major/minor dependency upgrades.",
+    "No schema-breaking data model migrations or edits to prisma/migrations files.",
+    "No runtime platform/hosting migration."
+  ],
+  "successMetrics": [
+    "All listed external compatibility surfaces produce no contract diffs against characterization baselines.",
+    "`pnpm lint` passes at story completion gates.",
+    "`pnpm build` passes at story completion gates.",
+    "Every touched module has updated characterization coverage with at least one positive and one negative scenario.",
+    "Implicit any usage is eliminated in touched code paths and tracked exceptions are documented with owners and removal plan.",
+    "Patch dependency updates complete without behavior regressions in characterization checks."
+  ],
+  "openQuestions": [
+    "Confirm canonical list of externally consumed routes/events beyond currently known overlay/admin/ingest paths.",
+    "Confirm whether any private operational scripts rely on current internal file paths that need temporary compatibility re-exports.",
+    "Decide timeline for removing temporary TypeScript strictness exceptions after initial refactor merge."
+  ],
+  "stack": {
+    "framework": "TypeScript + Fastify + Discord.js",
+    "hosting": "Existing Node.js deployment target (unchanged)",
+    "database": "Prisma ORM with SQLite default (`DATABASE_URL=file:./sqlite.db`)",
+    "auth": "Existing Discord token auth, overlay client token flow, and ingest pairing/token flow preserved"
+  },
+  "routes": [
+    {
+      "path": "/admin",
+      "name": "Admin UI",
+      "purpose": "Serve admin interface without changing existing behavior or markup semantics"
+    },
+    {
+      "path": "/admin/api/overview",
+      "name": "Admin Overview API",
+      "purpose": "Expose runtime/admin overview data with unchanged payload shape"
+    },
+    {
+      "path": "/admin/api/runtime-settings",
+      "name": "Admin Runtime Settings API",
+      "purpose": "Read runtime settings with unchanged response and validation behavior"
+    },
+    {
+      "path": "/admin/api/ingest-authors",
+      "name": "Admin Ingest Authors API",
+      "purpose": "List known ingest authors with unchanged filtering/sorting semantics"
+    },
+    {
+      "path": "/admin/api/overlay-clients/:clientId/revoke",
+      "name": "Overlay Client Revoke API",
+      "purpose": "Revoke overlay clients with unchanged authorization and response behavior"
+    },
+    {
+      "path": "/overlay/pair/consume",
+      "name": "Overlay Pair Consume",
+      "purpose": "Consume pairing codes for overlay clients with unchanged request/response contract"
+    },
+    {
+      "path": "/overlay/config",
+      "name": "Overlay Config",
+      "purpose": "Serve overlay runtime configuration with unchanged payload contract"
+    },
+    {
+      "path": "/overlay/media/:assetId",
+      "name": "Overlay Media Access",
+      "purpose": "Serve media assets with unchanged authorization/streaming behavior"
+    },
+    {
+      "path": "/overlay/temp/:transientMediaId",
+      "name": "Transient Media Compatibility Endpoint",
+      "purpose": "Preserve backward-compatible transient media contract where deployed integrations depend on it"
+    },
+    {
+      "path": "/ingest/pair/consume",
+      "name": "Ingest Pair Consume",
+      "purpose": "Consume ingest pairing codes with unchanged request/response contract"
+    }
+  ],
+  "uiNotes": [
+    "No frontend redesign: admin interface behavior, layout structure, and field semantics remain unchanged.",
+    "Discord command outputs (message content, embeds, and permission outcomes) remain unchanged.",
+    "If internal templates are reorganized, route outputs and client-visible text remain byte-for-byte compatible where feasible."
+  ],
+  "dataModel": [
+    {
+      "entity": "MediaAsset",
+      "fields": [
+        "id",
+        "sourceHash",
+        "sourceUrl",
+        "kind",
+        "mime",
+        "durationSec",
+        "width",
+        "height",
+        "isVertical",
+        "storagePath",
+        "sizeBytes",
+        "status",
+        "error",
+        "lastAccessedAt",
+        "expiresAt",
+        "createdAt"
+      ]
+    },
+    {
+      "entity": "MemeBoardItem",
+      "fields": [
+        "id",
+        "guildId",
+        "mediaAssetId",
+        "title",
+        "message",
+        "createdByDiscordUserId",
+        "createdByName",
+        "createdAt"
+      ]
+    },
+    {
+      "entity": "PlaybackJob",
+      "fields": [
+        "id",
+        "guildId",
+        "mediaAssetId",
+        "text",
+        "showText",
+        "authorName",
+        "authorImage",
+        "durationSec",
+        "priority",
+        "status",
+        "resumesAfterJobId",
+        "resumeOffsetSec",
+        "remainingMsSnapshot",
+        "lastPlaybackStateAt",
+        "submissionDate",
+        "executionDate",
+        "scheduledAt",
+        "startedAt",
+        "finishedAt"
+      ]
+    },
+    {
+      "entity": "Guild",
+      "fields": [
+        "id",
+        "name",
+        "busyUntil",
+        "defaultMediaTime",
+        "maxMediaTime",
+        "displayMediaFull"
+      ]
+    },
+    {
+      "entity": "OverlayClient",
+      "fields": [
+        "id",
+        "guildId",
+        "label",
+        "tokenHash",
+        "sessionMode",
+        "defaultAuthorName",
+        "defaultAuthorImage",
+        "createdByDiscordUserId",
+        "lastSeenAt",
+        "createdAt",
+        "revokedAt"
+      ]
+    },
+    {
+      "entity": "IngestClient",
+      "fields": [
+        "id",
+        "guildId",
+        "label",
+        "tokenHash",
+        "defaultAuthorName",
+        "defaultAuthorImage",
+        "createdByDiscordUserId",
+        "lastSeenAt",
+        "createdAt",
+        "revokedAt"
+      ]
+    },
+    {
+      "entity": "PairingCode",
+      "fields": [
+        "code",
+        "guildId",
+        "mode",
+        "createdByDiscordUserId",
+        "authorName",
+        "authorImage",
+        "expiresAt",
+        "usedAt",
+        "createdAt"
+      ]
+    }
+  ],
+  "importFormat": {
+    "description": "No new import format is introduced; existing API payload contracts and command inputs are preserved. Characterization fixtures capture baseline request/response shapes to enforce compatibility.",
+    "example": {
+      "overlayPairConsume": {
+        "request": {
+          "code": "ABCD1234",
+          "label": "OBS Overlay"
+        },
+        "response": {
+          "clientId": "existing-contract-value",
+          "token": "existing-contract-value"
+        }
+      },
+      "ingestPairConsume": {
+        "request": {
+          "code": "WXYZ7890",
+          "label": "Ingest Bot"
+        },
+        "response": {
+          "clientId": "existing-contract-value",
+          "token": "existing-contract-value"
+        }
+      }
+    }
+  },
+  "rules": [
+    "Behavior preservation is mandatory: external outputs and side effects must match existing behavior unless explicitly approved.",
+    "Refactor in thin slices with characterization coverage added before structural change in each area.",
+    "No breaking changes to REST overlay endpoints, socket events from @livechat/overlay-protocol, Discord command interfaces, env variable contracts, or Prisma model semantics.",
+    "No edits to prisma/migrations/** during this refactor.",
+    "Use centralized validation/parsing utilities to avoid duplicated unsafe coercion logic.",
+    "All new/updated error paths must return safe, non-sensitive responses while preserving status codes/body semantics.",
+    "TypeScript strictness is tightened with explicit temporary exceptions only when unavoidable; each exception must be tracked with owner and removal task.",
+    "Patch-only dependency upgrades are allowed; minor/major upgrades are out of scope.",
+    "Quality gates run after each meaningful slice: pnpm lint and pnpm build.",
+    "If any compatibility diff appears, stop and resolve before proceeding to the next story."
+  ],
+  "qualityGates": [
+    "pnpm lint",
+    "pnpm build"
+  ],
+  "stories": [
+    {
+      "id": "US-001",
+      "title": "Establish characterization baselines for current behavior",
+      "status": "in_progress",
+      "dependsOn": [],
+      "description": "As a maintainer, I want executable characterization coverage for current contracts so that refactoring can proceed without accidental behavior drift.",
+      "acceptanceCriteria": [
+        "Create characterization scripts/tests for REST, Socket.IO lifecycle, Discord command execution flow, and media lifecycle critical paths in touched modules.",
+        "Baseline artifacts capture request/response status codes, payload shapes, and key side effects for sensitive routes and events.",
+        "Example: valid POST /overlay/pair/consume returns the same status code and response shape in baseline and post-change runs.",
+        "Negative case: malformed consume payload reproduces the same validation error code/body shape as baseline.",
+        "A runbook documents how to execute characterization checks before each refactor slice."
+      ],
+      "startedAt": "2026-03-05T08:09:58.722289+00:00",
+      "completedAt": null,
+      "updatedAt": "2026-03-05T08:09:58.722419+00:00"
+    },
+    {
+      "id": "US-002",
+      "title": "Define module boundaries and compatibility map",
+      "status": "open",
+      "dependsOn": [
+        "US-001"
+      ],
+      "description": "As a maintainer, I want a target module map with compatibility constraints so that code reorganization remains safe and consistent.",
+      "acceptanceCriteria": [
+        "Create a documented module map covering loaders, components, services, repositories, and shared utilities for the full codebase.",
+        "For each moved/renamed internal file, provide compatibility re-export wrappers where internal consumers need a phased transition.",
+        "Example: existing internal import path continues to resolve via compatibility wrapper during migration phase.",
+        "Negative case: any proposed module move that would alter an external entrypoint is rejected and logged as out of scope.",
+        "Boundary rules include prohibited cross-layer dependencies and approved dependency directions."
+      ]
+    },
+    {
+      "id": "US-003",
+      "title": "Refactor REST route loading into domain modules",
+      "status": "open",
+      "dependsOn": [
+        "US-002"
+      ],
+      "description": "As a maintainer, I want REST route registration and handlers organized by domain so that HTTP behavior is easier to maintain without changing contracts.",
+      "acceptanceCriteria": [
+        "Reorganize REST loader internals into clearly separated domain registrars while preserving route prefixes, methods, and handler behavior.",
+        "Maintain existing response payload keys and status codes for admin, overlay, and ingest routes.",
+        "Example: GET /overlay/config returns the same fields and status code before and after refactor.",
+        "Negative case: unsupported route paths continue to return the same not-found behavior as baseline.",
+        "Characterization checks for REST routes pass with no contract diff."
+      ]
+    },
+    {
+      "id": "US-004",
+      "title": "Refactor socket loader lifecycle with strict boundaries",
+      "status": "open",
+      "dependsOn": [
+        "US-002"
+      ],
+      "description": "As a maintainer, I want socket authentication, session lifecycle, and event emission separated into explicit modules so that correctness and security are easier to enforce.",
+      "acceptanceCriteria": [
+        "Split socket loader internals into authentication, connection state, and event dispatch modules with explicit typed interfaces.",
+        "Preserve event names and payload contract from @livechat/overlay-protocol.",
+        "Example: authenticated overlay client receives the same event sequence and payload structure as baseline.",
+        "Negative case: invalid token or malformed payload follows the same rejection/disconnect semantics as baseline.",
+        "No new global mutable state is introduced outside existing runtime wiring constraints."
+      ]
+    },
+    {
+      "id": "US-005",
+      "title": "Refactor Discord command loading and execution flow",
+      "status": "open",
+      "dependsOn": [
+        "US-002"
+      ],
+      "description": "As a maintainer, I want Discord command registration and execution internals modularized so that command maintenance is safer and clearer without user-visible changes.",
+      "acceptanceCriteria": [
+        "Split Discord loader responsibilities into command registry, command metadata assembly, and interaction execution handling.",
+        "Keep command names, options, permission expectations, and user-facing responses unchanged.",
+        "Example: /help command returns the same embed/message content and status behavior as baseline.",
+        "Negative case: unknown or failing command interaction is handled safely without process crash and with baseline-equivalent user-facing outcome.",
+        "Characterization checks confirm no contract drift in command registration payload shape."
+      ]
+    },
+    {
+      "id": "US-006",
+      "title": "Centralize input validation and request parsing",
+      "status": "open",
+      "dependsOn": [
+        "US-003",
+        "US-004",
+        "US-005"
+      ],
+      "description": "As a maintainer, I want shared validation and parsing utilities so that inputs are consistently sanitized and typed across domains.",
+      "acceptanceCriteria": [
+        "Introduce shared validation helpers (using existing validation approach) for common request body/params/query patterns.",
+        "Apply shared validators to sensitive REST and socket input paths without changing success/error contract semantics.",
+        "Example: valid admin payload (including expected author identifiers) is accepted and persisted exactly as before.",
+        "Negative case: invalid authorDiscordUserId still yields baseline-compatible invalid_author_discord_user_id behavior.",
+        "All new validators expose explicit TypeScript input/output types."
+      ]
+    },
+    {
+      "id": "US-007",
+      "title": "Standardize safe error handling and logging",
+      "status": "open",
+      "dependsOn": [
+        "US-006"
+      ],
+      "description": "As an operator, I want consistent error handling and safe logs so that failures are diagnosable without leaking sensitive details.",
+      "acceptanceCriteria": [
+        "Create typed error categories and centralized mapping to HTTP/socket/command error outputs while preserving current observable status/body behavior.",
+        "Ensure sensitive values (tokens, secrets, raw credentials) are never logged.",
+        "Example: known operational error logs structured context and returns the same user-visible error response contract.",
+        "Negative case: unexpected thrown error does not crash long-running services and still returns baseline-equivalent safe response.",
+        "Error-handling paths are covered by characterization scenarios in touched modules."
+      ]
+    },
+    {
+      "id": "US-008",
+      "title": "Harden environment parsing and secure defaults",
+      "status": "open",
+      "dependsOn": [
+        "US-006"
+      ],
+      "description": "As a maintainer, I want stricter runtime config parsing and secure defaults so that invalid states are reduced without altering valid deployment behavior.",
+      "acceptanceCriteria": [
+        "Refactor env parsing into clearly typed config modules with explicit defaults and invariant checks.",
+        "Preserve behavior for all currently valid environment configurations.",
+        "Example: existing production-equivalent env values produce identical runtime configuration outputs.",
+        "Negative case: clearly invalid config value is rejected deterministically with safe logging and controlled startup failure behavior.",
+        "No environment variable is renamed or removed; backward-compatible aliases are documented if needed."
+      ]
+    },
+    {
+      "id": "US-009",
+      "title": "Tighten TypeScript compiler policy with tracked exceptions",
+      "status": "open",
+      "dependsOn": [
+        "US-001"
+      ],
+      "description": "As a maintainer, I want stricter TypeScript settings and explicit exception tracking so that runtime bugs are prevented earlier.",
+      "acceptanceCriteria": [
+        "Adopt stricter tsconfig policy for refactor target (including noImplicitAny and additional strictness flags) using a phased, non-breaking rollout.",
+        "Where full strictness cannot be immediate, add temporary localized exceptions with TODO owner and removal ticket reference.",
+        "Example: touched modules compile without implicit any and with explicit interface/type contracts.",
+        "Negative case: introducing a new implicit any in a touched path fails build/lint checks.",
+        "Document final strictness matrix and remaining exception backlog."
+      ]
+    },
+    {
+      "id": "US-010",
+      "title": "Eliminate weak typing in critical runtime paths",
+      "status": "open",
+      "dependsOn": [
+        "US-003",
+        "US-004",
+        "US-005",
+        "US-009"
+      ],
+      "description": "As a maintainer, I want explicit types/interfaces on critical flows so that domain boundaries and contracts are compile-time enforced.",
+      "acceptanceCriteria": [
+        "Define explicit request/response/domain interfaces for critical loaders, auth flows, and media orchestration paths.",
+        "Replace implicit any and unsafe casts in touched critical files with typed narrowing and guards.",
+        "Example: overlay auth resolution returns a discriminated union type consumed safely by route and socket handlers.",
+        "Negative case: missing required contract field (for example createdByDiscordUserId where required) is caught at compile time or validated at runtime with baseline-compatible behavior.",
+        "Add focused type-level tests or compile checks for newly introduced domain types where feasible."
+      ]
+    },
+    {
+      "id": "US-011",
+      "title": "Perform dependency hygiene with patch-only updates",
+      "status": "open",
+      "dependsOn": [
+        "US-001"
+      ],
+      "description": "As a maintainer, I want safe dependency hygiene so that known risks are reduced without introducing compatibility breaks.",
+      "acceptanceCriteria": [
+        "Audit direct dependencies for unused packages, duplicated transitive risks, and available patch updates.",
+        "Apply only patch-level upgrades with release note review and rollback notes.",
+        "Example: a patch security update is applied and characterization/lint/build checks remain green with no contract changes.",
+        "Negative case: minor or major update candidates are explicitly deferred and documented as out of current scope.",
+        "Update dependency hygiene report with before/after versions and rationale."
+      ]
+    },
+    {
+      "id": "US-012",
+      "title": "Refactor media lifecycle internals for correctness and cleanup safety",
+      "status": "open",
+      "dependsOn": [
+        "US-006",
+        "US-007"
+      ],
+      "description": "As an operator, I want media ingestion and cleanup internals simplified and guarded so that temporary files and asset states remain correct under failures.",
+      "acceptanceCriteria": [
+        "Split large media lifecycle logic into focused modules/functions with explicit typed boundaries.",
+        "Preserve existing storage paths, media URL behavior, and expiration semantics.",
+        "Example: successful media ingest produces the same playable asset behavior and metadata state transitions as baseline.",
+        "Negative case: failed download/transcode path cleans temporary resources and does not leave inconsistent asset status beyond baseline behavior.",
+        "Characterization checks cover success, timeout/error, and cleanup scenarios."
+      ]
+    },
+    {
+      "id": "US-013",
+      "title": "Align naming and formatting conventions across modules",
+      "status": "open",
+      "dependsOn": [
+        "US-010"
+      ],
+      "description": "As a maintainer, I want consistent naming and code style conventions so that the refactored codebase is easier to navigate and review.",
+      "acceptanceCriteria": [
+        "Apply a documented naming convention for files, symbols, and module responsibilities across all touched paths.",
+        "Ensure lint/format outputs are clean and predictable while preserving behavior.",
+        "Example: similarly scoped services follow the same naming structure and export style conventions.",
+        "Negative case: ambiguous or duplicated naming that obscures behavior is rejected during review and corrected before merge.",
+        "Update refactor guide notes for future contributors with examples of accepted conventions."
+      ]
+    },
+    {
+      "id": "US-014",
+      "title": "Execute full backward-compatibility verification and release checklist",
+      "status": "open",
+      "dependsOn": [
+        "US-007",
+        "US-008",
+        "US-011",
+        "US-012",
+        "US-013"
+      ],
+      "description": "As a maintainer, I want a final verification gate so that the refactor can ship confidently without behavior regressions.",
+      "acceptanceCriteria": [
+        "Run full characterization suite plus required quality gates and capture artifacts for review.",
+        "Verify no contract diffs for REST routes, socket events, Discord command behavior, env semantics, and database behavior.",
+        "Example: sampled production-like workflows (overlay pairing, ingest pairing, command-driven playback) match baseline outcomes.",
+        "Negative case: any detected contract drift blocks completion until explicitly resolved or approved.",
+        "Publish a release checklist and residual-risk note that lists anything intentionally not validated."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "validConsume": {
+    "statusCode": 200,
+    "bodyShape": {
+      "apiBaseUrl": "string",
+      "authorName": "string",
+      "clientId": "string",
+      "clientToken": "string",
+      "deviceName": "string",
+      "guildId": "string",
+      "sessionMode": "string"
+    },
+    "sideEffects": {
+      "pairingCodeMarkedUsed": true,
+      "pairingCodeForcedExpired": true,
+      "existingClientRevokedCount": 1,
+      "createdClientLabel": "Overlay-Alice",
+      "createdClientSessionMode": "NORMAL"
+    }
+  },
+  "malformedConsume": {
+    "statusCode": 400,
+    "bodyShape": {
+      "error": "string"
+    }
+  }
+}

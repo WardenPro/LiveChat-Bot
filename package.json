@@ -7,6 +7,7 @@
     "dev": "pnpm migration:up && tsx ./src/index.ts | pnpm pino-pretty",
     "start": "node ./dist/src/index.js",
     "build": "tsc -p tsconfig.json",
+    "characterization": "tsx ./src/characterization/runCharacterization.ts",
     "lint": "eslint src --ext .ts --fix",
     "prepare": "husky install",
     "generate": "prisma generate",

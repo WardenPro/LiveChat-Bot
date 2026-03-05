@@ -1,0 +1,49 @@
+{
+  "missingTokenAuth": {
+    "errorMessage": "missing_token"
+  },
+  "validTokenAuth": {
+    "errorMessage": null,
+    "socketDataShape": {
+      "guildId": "string",
+      "overlayAuthorImage": "string",
+      "overlayAuthorName": "string",
+      "overlayClientId": "string",
+      "overlayClientLabel": "string",
+      "overlaySessionMode": "string"
+    },
+    "overlayClientUpdateCount": 1
+  },
+  "peersLifecycle": {
+    "peersEventCount": 2,
+    "firstPeersPayloadShape": {
+      "guildId": "string",
+      "peers": [
+        {
+          "clientId": "string",
+          "label": "string"
+        }
+      ]
+    },
+    "schedulerOnConnectCalls": 1
+  },
+  "heartbeatLifecycle": {
+    "overlayHeartbeatUpdateCount": 1,
+    "lastSessionMode": "normal"
+  },
+  "disconnectLifecycle": {
+    "guildBusyUntilClearedCount": 1,
+    "guildUpsertShape": {
+      "create": {
+        "busyUntil": "null",
+        "id": "string"
+      },
+      "update": {
+        "busyUntil": "null"
+      },
+      "where": {
+        "id": "string"
+      }
+    }
+  }
+}

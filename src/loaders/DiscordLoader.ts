@@ -123,7 +123,7 @@ const loadDiscordCommands = async (fastify: FastifyCustomInstance) => {
   }
 };
 
-const loadDiscordCommandsHandler = () => {
+export const loadDiscordCommandsHandler = () => {
   discordClient.on('interactionCreate', async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
 

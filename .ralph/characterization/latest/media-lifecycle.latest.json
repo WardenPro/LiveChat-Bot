@@ -1,0 +1,24 @@
+{
+  "touchMediaAsset": {
+    "touchedAssetExists": true,
+    "touchPreservedExpiry": true,
+    "touchLastAccessedUpdated": true
+  },
+  "enforceCacheBudget": {
+    "hasCapacity": true,
+    "evictedAssetsCount": 1,
+    "evictedBytes": 500000,
+    "evictedAssetStillInState": false,
+    "evictedAssetFileStillOnDisk": false
+  },
+  "purgeExpiredMediaAssets": {
+    "expiredAssetStillPresent": false,
+    "staleProcessingStillPresent": false,
+    "freshAssetStillPresent": true,
+    "remainingAssetIds": [
+      "fresh-ready-asset",
+      "keep-asset",
+      "touch-asset"
+    ]
+  }
+}
