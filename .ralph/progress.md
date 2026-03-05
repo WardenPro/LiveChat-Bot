@@ -482,3 +482,41 @@ Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/ru
   - Useful context
     - Local `pnpm-workspace.yaml` ensures the repo’s `pnpm.overrides` (notably `undici`/`minimatch`) are effective for audit and install flows.
 ---
+## [2026-03-05 13:21 CET] - US-012: Refactor media lifecycle internals for correctness and cleanup safety
+Thread: 
+Run: 20260305-090958-5834 (iteration 12)
+Run log: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-090958-5834-iter-12.log
+Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-090958-5834-iter-12.md
+- Guardrails reviewed: yes
+- No-commit run: false
+- Commit: 1eb38aa refactor(media): extract lifecycle ingestion flow
+- Post-commit status: `clean`
+- Verification:
+  - Command: pnpm characterization -- --update-baseline -> PASS
+  - Command: pnpm characterization -> PASS
+  - Command: pnpm lint -> PASS
+  - Command: pnpm build -> PASS
+  - Command: log_file=$(mktemp) && (API_URL=http://localhost:3333 DISCORD_TOKEN=dev-smoke-token DISCORD_CLIENT_ID=dev-smoke-client DATABASE_URL=file:./sqlite.db pnpm dev >"$log_file" 2>&1) & pid=$!; sleep 20; kill -TERM "$pid" >/dev/null 2>&1 || true; sleep 1; kill -KILL "$pid" >/dev/null 2>&1 || true; wait "$pid" >/dev/null 2>&1 || true; tail -n 120 "$log_file" -> FAIL (expected with dummy Discord token; runtime boot reached Discord auth stage)
+- Files changed:
+  - .agents/tasks/prd-livechat-refactor.json
+  - .ralph/.tmp/prompt-20260305-090958-5834-12.md
+  - .ralph/.tmp/story-20260305-090958-5834-12.json
+  - .ralph/.tmp/story-20260305-090958-5834-12.md
+  - .ralph/characterization/latest/media-lifecycle.latest.json
+  - .ralph/runs/run-20260305-090958-5834-iter-11.md
+  - src/characterization/baselines/media-lifecycle.baseline.json
+  - src/characterization/mediaLifecycle.characterization.ts
+  - src/services/media/mediaIngestion.ts
+  - src/services/media/mediaLifecycleOrchestrator.ts
+- What was implemented
+  - Extracted source/local media ingestion orchestration into `mediaLifecycleOrchestrator.ts` with explicit typed dependency boundaries for cache check/touch, processing mark, temp-dir lifecycle, download, normalize/persist, and failure marking.
+  - Preserved existing storage-path behavior, URL canonicalization/hash behavior, and expiry/error transitions by wiring existing implementations into the new orchestrator from `mediaIngestion.ts`.
+  - Added characterization scenarios for ingestion lifecycle success, timeout failure, and cleanup-on-failure semantics; updated media lifecycle baseline accordingly.
+- **Learnings for future iterations:**
+  - Patterns discovered
+    - Typed orchestration boundaries make lifecycle behavior testable without invoking ffmpeg/yt-dlp.
+  - Gotchas encountered
+    - `pnpm lint --fix` can introduce unrelated formatting changes; revert non-story edits before commit.
+  - Useful context
+    - Dev smoke can validate runtime boot flow with placeholder env values, but Discord auth requires a valid token for full pass.
+---
