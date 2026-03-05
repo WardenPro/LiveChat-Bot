@@ -2,3 +2,5 @@
 . "$(dirname "$0")/_/husky.sh"
 
 pnpm audit --audit-level=critical --only=prod
+pnpm test:unit
+pnpm test:unit:matrix

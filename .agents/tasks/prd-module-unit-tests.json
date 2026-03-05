@@ -293,7 +293,7 @@
     {
       "id": "US-010",
       "title": "Backfill tests for message command modules",
-      "status": "in_progress",
+      "status": "done",
       "dependsOn": [
         "US-001",
         "US-002",
@@ -308,13 +308,13 @@
         "Message modules are fully represented in pnpm test:unit:matrix output."
       ],
       "startedAt": "2026-03-05T14:35:26.792279+00:00",
-      "completedAt": null,
-      "updatedAt": "2026-03-05T14:35:26.792417+00:00"
+      "completedAt": "2026-03-05T14:47:42.047176+00:00",
+      "updatedAt": "2026-03-05T14:47:42.047064+00:00"
     },
     {
       "id": "US-011",
       "title": "Backfill tests for shared services and adapters",
-      "status": "open",
+      "status": "done",
       "dependsOn": [
         "US-001",
         "US-002"
@@ -326,12 +326,15 @@
         "Example: social resolver normalizes a supported URL and returns expected parsed metadata shape.",
         "Negative case: external fetch/runtime dependency failure is converted to expected typed error handling path.",
         "After this story, the matrix report shows no uncovered modules outside explicit exclusions."
-      ]
+      ],
+      "startedAt": "2026-03-05T14:47:44.095567+00:00",
+      "completedAt": "2026-03-05T16:35:00.000000+00:00",
+      "updatedAt": "2026-03-05T16:35:00.000000+00:00"
     },
     {
       "id": "US-012",
       "title": "Enforce gates and document unit-test workflow",
-      "status": "open",
+      "status": "done",
       "dependsOn": [
         "US-003",
         "US-004",
@@ -350,7 +353,10 @@
         "Example: with all tests present, full gate sequence passes on a clean branch.",
         "Negative case: adding a new module without tests fails matrix gate and prevents green CI.",
         "Final validation run confirms full gate pass and zero uncovered runtime modules."
-      ]
+      ],
+      "startedAt": "2026-03-05T16:35:00.000000+00:00",
+      "completedAt": "2026-03-05T16:40:00.000000+00:00",
+      "updatedAt": "2026-03-05T16:40:00.000000+00:00"
     }
   ]
 }

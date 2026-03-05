@@ -83,6 +83,48 @@ La normalisation loudness est activée par défaut pendant la transcode:
 
 Les erreurs HTTP sont volontairement normalisées (`not_found`, `request_error`, `internal_error`) sans stack trace exposée.
 
+## Tests
+
+### Lancer les tests
+
+```bash
+# Suite de tests unitaires
+pnpm test:unit
+
+# Vérification que chaque module source a au moins un test
+pnpm test:unit:matrix
+
+# Tests de caractérisation (comportement observable en conditions réelles)
+pnpm characterization
+```
+
+### Quality gates complets
+
+```bash
+pnpm lint
+pnpm build
+pnpm test:unit
+pnpm test:unit:matrix
+```
+
+Ces quatre commandes sont aussi exécutées automatiquement par le workflow CI (`.github/workflows/ci.yml`) sur chaque push et pull request vers `main`, et par le hook `pre-push` local.
+
+### Structure
+
+```
+tests/
+└── unit/
+    ├── matrix/          # Script de vérification couverture modules
+    ├── components/      # Tests commandes Discord et messages
+    ├── loaders/         # Tests loaders REST, socket, Discord
+    ├── repositories/    # Tests repositories Prisma
+    ├── services/        # Tests services (auth, media, i18n, social…)
+    ├── index.test.ts
+    └── server.test.ts
+```
+
+Chaque module runtime sous `src/` doit avoir un fichier de test correspondant — `pnpm test:unit:matrix` échoue si un module est ajouté sans test.
+
 ## Docker Hub (GitHub Actions)
 
 Le workflow `/.github/workflows/docker.yml` build et pousse l'image sur Docker Hub:
