@@ -506,7 +506,7 @@
     {
       "id": "US-014",
       "title": "Execute full backward-compatibility verification and release checklist",
-      "status": "in_progress",
+      "status": "done",
       "dependsOn": [
         "US-007",
         "US-008",
@@ -523,8 +523,8 @@
         "Publish a release checklist and residual-risk note that lists anything intentionally not validated."
       ],
       "startedAt": "2026-03-05T12:32:28.290151+00:00",
-      "completedAt": null,
-      "updatedAt": "2026-03-05T12:32:28.290292+00:00"
+      "completedAt": "2026-03-05T12:45:53.793454+00:00",
+      "updatedAt": "2026-03-05T12:45:53.793354+00:00"
     }
   ]
 }

@@ -1,0 +1,329 @@
+{
+  "version": 1,
+  "project": "LiveChat-Bot Unit Test Backfill",
+  "overview": "Build a deterministic unit-test suite for the existing LiveChat-Bot codebase so each runtime module is covered after refactoring, while preserving current production behavior and API contracts.",
+  "goals": [
+    "Add automated unit tests for every runtime TypeScript module under src (excluding characterization, architecture notes, and declaration files).",
+    "Guarantee each module has at least one positive-path assertion and one negative-path assertion.",
+    "Keep current behavior stable by running characterization and build/lint gates alongside the new unit-test suite.",
+    "Provide a repeatable module-to-test matrix gate that fails when a new module has no corresponding unit tests."
+  ],
+  "nonGoals": [
+    "No functional refactor or feature work beyond what is required to enable deterministic tests.",
+    "No breaking change to overlay REST/socket contracts or Discord command behavior.",
+    "No edits to prisma/migrations unless explicitly requested in a separate task.",
+    "No replacement of the existing characterization suite."
+  ],
+  "successMetrics": [
+    "100% of runtime modules in src are mapped to at least one unit test file.",
+    "Unit-test suite passes locally and in CI using pnpm test:unit and pnpm test:unit:matrix.",
+    "Existing quality gates pnpm lint, pnpm build, and pnpm characterization continue to pass.",
+    "Regression defects attributable to refactor drift are caught by unit tests before merge."
+  ],
+  "openQuestions": [
+    "Should test completeness be enforced as 100% module-mapping only, or also with a minimum line/branch coverage threshold?",
+    "Should command modules that only build Discord metadata require deep behavior tests or smoke-level contract tests?",
+    "Should generated Prisma client wrappers be tested with mocks only, or with an optional SQLite integration layer in a separate suite?"
+  ],
+  "stack": {
+    "framework": "Node.js TypeScript backend with Fastify + Discord.js",
+    "hosting": "Self-hosted Node 20 service (Docker-compatible)",
+    "database": "Prisma ORM with SQLite by default",
+    "auth": "Overlay/socket authentication with pairing codes and ingest credentials from runtime config"
+  },
+  "routes": [
+    {
+      "path": "/overlay/pair/consume",
+      "name": "Overlay Pair Consume",
+      "purpose": "Validate backward-compatible pairing consume behavior through unit-level route/handler tests."
+    },
+    {
+      "path": "/overlay/config",
+      "name": "Overlay Config",
+      "purpose": "Assert returned overlay runtime configuration remains stable."
+    },
+    {
+      "path": "/overlay/temp/:transientMediaId",
+      "name": "Overlay Transient Media",
+      "purpose": "Test transient media access and error paths without contract drift."
+    },
+    {
+      "path": "/admin/* and /ingest/*",
+      "name": "Admin and Ingest Domains",
+      "purpose": "Verify route registration, auth guards, and handler validation boundaries."
+    }
+  ],
+  "uiNotes": [
+    "No browser UI is added in this initiative; user-facing verification is via Discord command responses and API payload contracts.",
+    "Test naming should mirror domain responsibilities to stay readable during refactor maintenance.",
+    "Use stable fixture data and deterministic clocks to avoid flaky outputs in command/message snapshots."
+  ],
+  "dataModel": [
+    {
+      "entity": "RuntimeModule",
+      "fields": [
+        "path",
+        "domain",
+        "isExcluded",
+        "hasUnitTest"
+      ]
+    },
+    {
+      "entity": "UnitTestCase",
+      "fields": [
+        "modulePath",
+        "scenarioType",
+        "inputFixture",
+        "expectedResult",
+        "expectedError"
+      ]
+    },
+    {
+      "entity": "ModuleCoverageReport",
+      "fields": [
+        "generatedAt",
+        "coveredModules",
+        "missingModules",
+        "status"
+      ]
+    }
+  ],
+  "importFormat": {
+    "description": "Not applicable. This PRD does not introduce external data import; inputs are local fixtures and module inventory scans.",
+    "example": {}
+  },
+  "rules": [
+    "Every runtime module must have at least one colocated or mirrored unit test file linked by deterministic naming rules.",
+    "Each module test set must include at least one happy path and one negative/error path assertion.",
+    "Unit tests must not call real network services, Discord API, or external binaries; those dependencies must be mocked or stubbed.",
+    "Characterization baselines remain the behavior safety net and must continue to pass unchanged.",
+    "New modules added after this initiative must fail the matrix gate until tests are added.",
+    "Test fixtures should avoid relying on wall-clock time or filesystem race conditions."
+  ],
+  "qualityGates": [
+    "pnpm lint",
+    "pnpm build",
+    "pnpm characterization",
+    "pnpm test:unit",
+    "pnpm test:unit:matrix"
+  ],
+  "stories": [
+    {
+      "id": "US-001",
+      "title": "Set up deterministic unit-test foundation",
+      "status": "in_progress",
+      "dependsOn": [],
+      "description": "As a maintainer, I want a stable unit-test toolchain and scripts so that module-level tests can run consistently on local and CI environments.",
+      "acceptanceCriteria": [
+        "Install required dev dependencies with explicit commands: pnpm add -D vitest @vitest/coverage-v8.",
+        "Add package scripts test:unit and test:unit:coverage, plus initial Vitest config tuned for a Node TypeScript backend.",
+        "Example: running pnpm test:unit with a sample module test returns exit code 0 and prints at least one passing test.",
+        "Negative case: a deliberately failing assertion in a sample test causes pnpm test:unit to exit non-zero.",
+        "pnpm lint and pnpm build still pass after test framework setup."
+      ],
+      "startedAt": "2026-03-05T12:57:06.187637+00:00",
+      "completedAt": null,
+      "updatedAt": "2026-03-05T12:57:06.187745+00:00"
+    },
+    {
+      "id": "US-002",
+      "title": "Create module inventory and missing-test gate",
+      "status": "open",
+      "dependsOn": [
+        "US-001"
+      ],
+      "description": "As a maintainer, I want an automated runtime module inventory so that we can enforce one-or-more unit tests for every module.",
+      "acceptanceCriteria": [
+        "Add a deterministic inventory script that scans src runtime modules and excludes characterization, architecture docs, declaration files, and typecheck-only files.",
+        "Add script pnpm test:unit:matrix that fails when inventory finds modules with no mapped test files.",
+        "Example: when a module has a matching test file, test:unit:matrix reports it as covered.",
+        "Negative case: when a new module is added without a test file, test:unit:matrix fails and prints the missing module path.",
+        "Matrix output is machine-readable enough for CI logs and developer troubleshooting."
+      ]
+    },
+    {
+      "id": "US-003",
+      "title": "Backfill tests for env configuration modules",
+      "status": "open",
+      "dependsOn": [
+        "US-001",
+        "US-002"
+      ],
+      "description": "As a maintainer, I want unit tests for env parsing and runtime config modules so that startup behavior remains stable after refactor.",
+      "acceptanceCriteria": [
+        "Cover src/services/env.ts and src/services/env/* modules including configSchema, defaults, parsers, and runtimeConfig behavior.",
+        "Assert explicit parsing behavior for required vars, optional vars, defaults, and normalization.",
+        "Example: missing optional variable uses configured default and yields the same resulting runtime config value.",
+        "Negative case: invalid numeric or enum env value returns the same startup validation error category as current behavior.",
+        "All added tests are counted as covered by pnpm test:unit:matrix."
+      ]
+    },
+    {
+      "id": "US-004",
+      "title": "Backfill tests for auth and validation services",
+      "status": "open",
+      "dependsOn": [
+        "US-001",
+        "US-002",
+        "US-003"
+      ],
+      "description": "As a maintainer, I want unit tests for auth and request-validation services so that API and socket guardrails do not regress.",
+      "acceptanceCriteria": [
+        "Cover src/services/overlayAuth.ts, src/services/ingestAuth.ts, src/services/pairingCodes.ts, and src/services/validation/requestParsing.ts.",
+        "Include tests for accepted credentials, rejected credentials, and parsing error branching.",
+        "Example: valid overlay pairing token is accepted and yields expected authenticated context.",
+        "Negative case: malformed or expired token path returns unauthorized/validation failure without leaking internal details.",
+        "No test performs real external calls; dependencies are mocked."
+      ]
+    },
+    {
+      "id": "US-005",
+      "title": "Backfill tests for media service pipeline",
+      "status": "open",
+      "dependsOn": [
+        "US-001",
+        "US-002",
+        "US-004"
+      ],
+      "description": "As a maintainer, I want unit tests for media ingestion, caching, source resolving, and lifecycle orchestration so that transient media behavior stays reliable.",
+      "acceptanceCriteria": [
+        "Cover src/services/media/* modules and related error types, including ingestion, transcode boundaries, cache interactions, and cleanup logic.",
+        "Use filesystem/temp-directory mocks to keep tests deterministic and side-effect safe.",
+        "Example: valid transient media input stores expected metadata and returns a resolvable transientMediaId.",
+        "Negative case: unsupported media format or failed source resolution returns typed media error and triggers cleanup path.",
+        "All media modules are listed as covered by pnpm test:unit:matrix."
+      ]
+    },
+    {
+      "id": "US-006",
+      "title": "Backfill tests for socket loader lifecycle",
+      "status": "open",
+      "dependsOn": [
+        "US-001",
+        "US-002",
+        "US-004"
+      ],
+      "description": "As a maintainer, I want unit tests for socket authentication, connection state, and event dispatch modules so that overlay socket behavior remains stable.",
+      "acceptanceCriteria": [
+        "Cover src/loaders/socketLoader.ts and src/loaders/socket/* modules, including connection setup, auth checks, and event routing.",
+        "Assert emitted event payload shapes and lifecycle transitions using mocked socket interfaces.",
+        "Example: authenticated client lifecycle registers handlers and dispatches expected overlay events.",
+        "Negative case: unauthenticated client is rejected and no privileged event handlers are attached.",
+        "Socket module coverage is recognized by pnpm test:unit:matrix."
+      ]
+    },
+    {
+      "id": "US-007",
+      "title": "Backfill tests for REST loader and route domains",
+      "status": "open",
+      "dependsOn": [
+        "US-001",
+        "US-002",
+        "US-004"
+      ],
+      "description": "As a maintainer, I want unit-level route registration and handler tests for REST domains so that protected API contracts remain unchanged.",
+      "acceptanceCriteria": [
+        "Cover src/loaders/RESTLoader.ts, src/loaders/rest/*, and route modules under src/components/overlay, src/components/admin, and src/components/ingest.",
+        "Validate route registration and key handler responses with Fastify injection-style tests or equivalent isolated handler tests.",
+        "Example: valid POST /overlay/pair/consume returns the expected status and response payload contract.",
+        "Negative case: malformed consume payload returns existing validation error status/body shape.",
+        "Protected routes assert auth guard behavior for valid and invalid credentials."
+      ]
+    },
+    {
+      "id": "US-008",
+      "title": "Backfill tests for Discord loader internals",
+      "status": "open",
+      "dependsOn": [
+        "US-001",
+        "US-002",
+        "US-004"
+      ],
+      "description": "As a maintainer, I want unit tests for Discord command registration and interaction execution internals so that command wiring does not drift.",
+      "acceptanceCriteria": [
+        "Cover src/loaders/DiscordLoader.ts and src/loaders/discord/* modules including metadata mapping, registry building, and execution dispatch.",
+        "Mock Discord.js client and interaction objects to avoid real Discord API calls.",
+        "Example: known command metadata is registered and dispatched to the expected execution handler.",
+        "Negative case: unknown command or execution exception follows existing error-handling path without crashing loader flow.",
+        "Module inventory marks all Discord loader internals as covered."
+      ]
+    },
+    {
+      "id": "US-009",
+      "title": "Backfill tests for Discord command modules",
+      "status": "open",
+      "dependsOn": [
+        "US-001",
+        "US-002",
+        "US-008"
+      ],
+      "description": "As a maintainer, I want unit tests for each Discord command module so that user-facing command behavior remains consistent.",
+      "acceptanceCriteria": [
+        "Cover all command modules under src/components/discord/* including info/help/alive/meme/overlay and settings commands.",
+        "Assert both successful command execution payloads and validation or permission-related failure behavior.",
+        "Example: alive command returns expected localized success response structure.",
+        "Negative case: invalid command argument (for example bad time value) produces expected validation error response path.",
+        "Each command module is mapped as covered in the matrix gate."
+      ]
+    },
+    {
+      "id": "US-010",
+      "title": "Backfill tests for message command modules",
+      "status": "open",
+      "dependsOn": [
+        "US-001",
+        "US-002",
+        "US-006"
+      ],
+      "description": "As a maintainer, I want unit tests for message command modules and worker logic so that overlay message flow remains reliable.",
+      "acceptanceCriteria": [
+        "Cover src/components/messages/* and related helper modules used directly by message command flows.",
+        "Validate payload construction, scheduling/stop interactions, and translation handling through isolated tests.",
+        "Example: talk/send command builds expected worker payload and triggers downstream call once.",
+        "Negative case: empty or blocked message input follows refusal/error path with no outbound side effect.",
+        "Message modules are fully represented in pnpm test:unit:matrix output."
+      ]
+    },
+    {
+      "id": "US-011",
+      "title": "Backfill tests for shared services and adapters",
+      "status": "open",
+      "dependsOn": [
+        "US-001",
+        "US-002"
+      ],
+      "description": "As a maintainer, I want unit tests for remaining shared services and adapter modules so that cross-domain utility behavior is protected.",
+      "acceptanceCriteria": [
+        "Cover remaining runtime modules including src/index.ts, src/server.ts, src/services/* non-media/non-auth modules, src/services/social/*, and src/repositories/prisma/*.",
+        "Mock process-level and external IO dependencies for deterministic test behavior.",
+        "Example: social resolver normalizes a supported URL and returns expected parsed metadata shape.",
+        "Negative case: external fetch/runtime dependency failure is converted to expected typed error handling path.",
+        "After this story, the matrix report shows no uncovered modules outside explicit exclusions."
+      ]
+    },
+    {
+      "id": "US-012",
+      "title": "Enforce gates and document unit-test workflow",
+      "status": "open",
+      "dependsOn": [
+        "US-003",
+        "US-004",
+        "US-005",
+        "US-006",
+        "US-007",
+        "US-008",
+        "US-009",
+        "US-010",
+        "US-011"
+      ],
+      "description": "As a maintainer, I want CI/local workflow documentation and enforced quality gates so that full module-level test coverage persists after future changes.",
+      "acceptanceCriteria": [
+        "Document how to run pnpm test:unit, pnpm test:unit:matrix, pnpm characterization, pnpm lint, and pnpm build for day-to-day and CI use.",
+        "Integrate unit-test and matrix commands into repository quality workflow so missing tests block merge.",
+        "Example: with all tests present, full gate sequence passes on a clean branch.",
+        "Negative case: adding a new module without tests fails matrix gate and prevents green CI.",
+        "Final validation run confirms full gate pass and zero uncovered runtime modules."
+      ]
+    }
+  ]
+}

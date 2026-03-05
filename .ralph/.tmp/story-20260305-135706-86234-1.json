@@ -1,0 +1,14 @@
+{
+  "ok": true,
+  "total": 12,
+  "remaining": 12,
+  "quality_gates": [
+    "pnpm lint",
+    "pnpm build",
+    "pnpm characterization",
+    "pnpm test:unit",
+    "pnpm test:unit:matrix"
+  ],
+  "id": "US-001",
+  "title": "Set up deterministic unit-test foundation"
+}

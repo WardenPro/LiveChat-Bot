@@ -9,6 +9,9 @@
     "build": "tsc -p tsconfig.json && pnpm typecheck:strict",
     "typecheck:strict": "tsc -p tsconfig.strict.json --noEmit",
     "characterization": "tsx ./src/characterization/runCharacterization.ts",
+    "test:unit": "vitest run --config vitest.config.ts",
+    "test:unit:coverage": "vitest run --config vitest.config.ts --coverage",
+    "test:unit:matrix": "pnpm test:unit",
     "lint": "eslint src --ext .ts --fix",
     "prepare": "husky install",
     "generate": "prisma generate",
@@ -24,6 +27,7 @@
     "@types/node": "20.11.30",
     "@typescript-eslint/eslint-plugin": "7.0.2",
     "@typescript-eslint/parser": "7.0.2",
+    "@vitest/coverage-v8": "^4.0.18",
     "eslint": "8.56.0",
     "eslint-config-prettier": "9.1.2",
     "eslint-import-resolver-typescript": "^3.6.1",
@@ -33,7 +37,8 @@
     "pino-pretty": "10.3.1",
     "prettier": "3.2.5",
     "tsx": "^4.7.1",
-    "typescript": "5.3.3"
+    "typescript": "5.3.3",
+    "vitest": "^4.0.18"
   },
   "dependencies": {
     "@gquittet/graceful-server": "^4.0.8",
