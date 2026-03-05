@@ -350,3 +350,49 @@ Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/ru
   - Useful context
     - The new `env-parsing` characterization suite now guards both valid production-like output parity and deterministic invalid-input rejection behavior.
 ---
+## [2026-03-05 11:23:55 CET] - US-009: Tighten TypeScript compiler policy with tracked exceptions
+Thread: 
+Run: 20260305-090958-5834 (iteration 9)
+Run log: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-090958-5834-iter-9.log
+Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-090958-5834-iter-9.md
+- Guardrails reviewed: yes
+- No-commit run: false
+- Commit: 6037193 refactor(typescript): tighten strict compile policy (or `none` + reason)
+- Post-commit status: `clean`
+- Verification:
+  - Command: pnpm lint -> PASS
+  - Command: pnpm build -> PASS
+  - Command: API_URL='http://localhost:3333' DISCORD_TOKEN='smoke-token' DISCORD_CLIENT_ID='smoke-client-id' DATABASE_URL='file:./sqlite.db' npx -y node@20.11.1 node_modules/tsx/dist/cli.mjs ./src/index.ts -> FAIL (existing runtime `ERR_PACKAGE_PATH_NOT_EXPORTED` from `file-type`)
+- Files changed:
+  - .agents/tasks/prd-livechat-refactor.json
+  - package.json
+  - tsconfig.json
+  - tsconfig.strict.json
+  - src/index.ts
+  - src/server.ts
+  - src/services/errors/runtimeErrorHandling.ts
+  - src/services/media/mediaSourceResolver.ts
+  - src/services/media/mediaTranscode.ts
+  - src/services/memeBoard.ts
+  - src/services/playbackScheduler.ts
+  - src/types/strictness-exceptions.d.ts
+  - src/architecture/typescript-strictness.md
+  - .ralph/.tmp/prompt-20260305-090958-5834-9.md
+  - .ralph/.tmp/story-20260305-090958-5834-9.json
+  - .ralph/.tmp/story-20260305-090958-5834-9.md
+  - .ralph/runs/run-20260305-090958-5834-iter-8.md
+- What was implemented
+  - Enabled `noImplicitAny` in the main TypeScript policy (`tsconfig.json`) and enforced a phased strict profile via `tsconfig.strict.json`.
+  - Wired the phased strict compile into the default build gate (`pnpm build`) through `pnpm typecheck:strict`.
+  - Removed noImplicitAny build blockers in touched runtime paths by adding explicit type contracts in media transcode probing, meme board aggregation, and playback scheduler job handling.
+  - Replaced legacy `@ts-ignore` suppressions with tracked `@ts-expect-error` exceptions carrying owner and removal ticket references.
+  - Added `src/types/strictness-exceptions.d.ts` for temporary ambient module typings and documented the strictness matrix plus exception backlog in `src/architecture/typescript-strictness.md`.
+- **Learnings for future iterations:**
+  - Patterns discovered
+    - A two-tier policy (`noImplicitAny` global + scoped strict-phase config) gives immediate safety wins without forcing broad legacy rewrites.
+  - Gotchas encountered
+    - `pnpm lint` (`--fix`) still rewrites unrelated legacy files; restoring non-story files before commit is required.
+    - Runtime smoke remains blocked by a pre-existing `file-type` export mismatch even under Node 20.
+  - Useful context
+    - New strict-phase gate currently targets `src/services/{env,errors,validation}` and can be expanded module-by-module as backlog exceptions are removed.
+---
