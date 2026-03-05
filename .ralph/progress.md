@@ -731,3 +731,43 @@ Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/ru
   - Useful context
     - Matrix gate failure count dropped to `64` with env module coverage now mapped for US-003.
 ---
+## [2026-03-05 14:34:04 CET] - US-004: Backfill tests for auth and validation services
+Thread: 
+Run: 20260305-135706-86234 (iteration 4)
+Run log: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-135706-86234-iter-4.log
+Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-135706-86234-iter-4.md
+- Guardrails reviewed: yes
+- No-commit run: false
+- Commit: eec9a82 test(auth-validation): backfill guardrail service tests
+- Post-commit status: `clean`
+- Verification:
+  - Command: pnpm lint -> PASS
+  - Command: pnpm build -> PASS
+  - Command: pnpm characterization -> PASS
+  - Command: pnpm test:unit -> PASS
+  - Command: pnpm test:unit:matrix -> FAIL (expected at this stage; uncovered modules remain outside US-004 scope)
+  - Command: log_file=$(mktemp) && (API_URL='http://localhost:3333' DISCORD_TOKEN='dev-smoke-token' DISCORD_CLIENT_ID='dev-smoke-client' DATABASE_URL='file:./sqlite.db' pnpm dev >"$log_file" 2>&1) & pid=$!; sleep 25; kill -TERM "$pid"; ...; rg "[BOOT] Server bootstrap completed" -> PASS (`__SMOKE_OK__`; Discord auth failed as expected with dummy token)
+- Files changed:
+  - .agents/tasks/prd-module-unit-tests.json
+  - .ralph/.tmp/prompt-20260305-135706-86234-4.md
+  - .ralph/.tmp/story-20260305-135706-86234-4.json
+  - .ralph/.tmp/story-20260305-135706-86234-4.md
+  - .ralph/runs/run-20260305-135706-86234-iter-3.md
+  - tests/unit/services/ingestAuth.test.ts
+  - tests/unit/services/overlayAuth.test.ts
+  - tests/unit/services/pairingCodes.test.ts
+  - tests/unit/services/validation/requestParsing.test.ts
+  - .ralph/progress.md
+- What was implemented
+  - Added unit tests for `src/services/overlayAuth.ts` covering valid bearer/query/socket auth resolution, invalid/missing credential branches, legacy token creation fallback behavior, and unavailable-model error handling.
+  - Added unit tests for `src/services/ingestAuth.ts` covering ingest token creation, accepted and rejected bearer credential resolution, revoke behavior, API-enabled checks, and unavailable-model branch.
+  - Added unit tests for `src/services/pairingCodes.ts` covering stale-code purge query contract, purge worker success logging, and purge worker failure logging.
+  - Added unit tests for `src/services/validation/requestParsing.ts` covering parser forwarding, malformed-source fallback, parser-thrown error propagation, and invalid parsing branches for string/boolean/int/duration helpers.
+- **Learnings for future iterations:**
+  - Patterns discovered
+    - Global `prisma`/`logger` stubs plus deterministic request fixtures are sufficient to unit-test auth and worker guardrails without external calls.
+  - Gotchas encountered
+    - `test:unit:matrix` remains intentionally failing until later stories backfill the rest of runtime modules; this is expected for scoped stories like US-004.
+  - Useful context
+    - Bounded `pnpm dev` smoke with a bootstrap marker check confirms startup health even when Discord login fails with placeholder credentials.
+---
