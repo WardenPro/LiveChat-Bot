@@ -251,7 +251,7 @@
     {
       "id": "US-008",
       "title": "Backfill tests for Discord loader internals",
-      "status": "in_progress",
+      "status": "done",
       "dependsOn": [
         "US-001",
         "US-002",
@@ -266,13 +266,13 @@
         "Module inventory marks all Discord loader internals as covered."
       ],
       "startedAt": "2026-03-05T14:13:57.397854+00:00",
-      "completedAt": null,
-      "updatedAt": "2026-03-05T14:13:57.398067+00:00"
+      "completedAt": "2026-03-05T14:24:36.497608+00:00",
+      "updatedAt": "2026-03-05T14:24:36.497503+00:00"
     },
     {
       "id": "US-009",
       "title": "Backfill tests for Discord command modules",
-      "status": "open",
+      "status": "in_progress",
       "dependsOn": [
         "US-001",
         "US-002",
@@ -285,7 +285,10 @@
         "Example: alive command returns expected localized success response structure.",
         "Negative case: invalid command argument (for example bad time value) produces expected validation error response path.",
         "Each command module is mapped as covered in the matrix gate."
-      ]
+      ],
+      "startedAt": "2026-03-05T14:24:38.557680+00:00",
+      "completedAt": null,
+      "updatedAt": "2026-03-05T14:24:38.557826+00:00"
     },
     {
       "id": "US-010",
