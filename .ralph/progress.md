@@ -520,3 +520,53 @@ Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/ru
   - Useful context
     - Dev smoke can validate runtime boot flow with placeholder env values, but Discord auth requires a valid token for full pass.
 ---
+## [2026-03-05 13:31:25 CET] - US-013: Align naming and formatting conventions across modules
+Thread: 
+Run: 20260305-090958-5834 (iteration 13)
+Run log: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-090958-5834-iter-13.log
+Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-090958-5834-iter-13.md
+- Guardrails reviewed: yes
+- No-commit run: false
+- Commit: 6291947 refactor(naming): align route naming conventions
+- Post-commit status: `clean`
+- Verification:
+  - Command: pnpm characterization -> PASS
+  - Command: pnpm lint -> PASS
+  - Command: pnpm build -> PASS
+  - Command: log_file=$(mktemp) && (API_URL='http://localhost:3333' DISCORD_TOKEN='dev-smoke-token' DISCORD_CLIENT_ID='dev-smoke-client' DATABASE_URL='file:./sqlite.db' LOG='silent' pnpm dev >"$log_file" 2>&1) & pid=$!; sleep 20; kill -TERM "$pid" >/dev/null 2>&1 || true; sleep 1; kill -KILL "$pid" >/dev/null 2>&1 || true; wait "$pid" >/dev/null 2>&1 || true; tail -n 120 "$log_file" -> FAIL (bounded smoke stopped with lifecycle error, no explicit bootstrap marker)
+  - Command: log_file=$(mktemp) && (API_URL='http://localhost:3333' DISCORD_TOKEN='dev-smoke-token' DISCORD_CLIENT_ID='dev-smoke-client' DATABASE_URL='file:./sqlite.db' pnpm dev >"$log_file" 2>&1) & pid=$!; sleep 25; kill -TERM "$pid" >/dev/null 2>&1 || true; sleep 1; kill -KILL "$pid" >/dev/null 2>&1 || true; wait "$pid" >/dev/null 2>&1 || true; tail -n 160 "$log_file"; if rg -q "\[BOOT\] Server bootstrap completed" "$log_file"; then echo "__SMOKE_OK__"; else echo "__SMOKE_NO_BOOT__"; fi -> PASS (`__SMOKE_OK__`; Discord auth expectedly failed with dummy token)
+- Files changed:
+  - .agents/tasks/prd-livechat-refactor.json
+  - .ralph/.tmp/prompt-20260305-090958-5834-13.md
+  - .ralph/.tmp/story-20260305-090958-5834-13.json
+  - .ralph/.tmp/story-20260305-090958-5834-13.md
+  - .ralph/runs/run-20260305-090958-5834-iter-12.md
+  - src/architecture/module-boundaries.md
+  - src/characterization/adminIngestClientValidation.characterization.ts
+  - src/characterization/restOverlayPairConsume.characterization.ts
+  - src/characterization/restRouteDomains.characterization.ts
+  - src/components/admin/adminRoutes.ts
+  - src/components/ingest/ingestRoutes.ts
+  - src/components/messages/messagesWorker.ts
+  - src/components/overlay/overlayRoutes.ts
+  - src/loaders/RESTLoader.ts
+  - src/loaders/rest/adminDomainRegistrar.ts
+  - src/loaders/rest/ingestDomainRegistrar.ts
+  - src/loaders/rest/overlayDomainRegistrar.ts
+  - src/server.ts
+  - src/services/manualStop.ts
+  - src/services/media/mediaCache.ts
+- What was implemented
+  - Standardized route/module naming in touched REST paths by introducing canonical action-oriented exports (`createAdminRoutes`, `createIngestRoutes`, `createOverlayRoutes`, `loadRestRoutes`) and migrating in-repo callers to those names.
+  - Preserved backward compatibility by keeping legacy aliases (`AdminRoutes`, `IngestRoutes`, `OverlayRoutes`, `loadRoutes`) as explicit migration shims.
+  - Updated characterization callers to the canonical exports while preserving baseline behavior checks.
+  - Documented accepted and rejected naming/export conventions with concrete examples in `src/architecture/module-boundaries.md` for future contributors.
+  - Lint auto-formatting also normalized deterministic import/wrap formatting in `messagesWorker.ts`, `manualStop.ts`, and `mediaCache.ts`.
+- **Learnings for future iterations:**
+  - Patterns discovered
+    - Action-oriented exports (`create*`, `register*`, `load*`) reduce ambiguity between factory functions and type/class-like symbols in route modules.
+  - Gotchas encountered
+    - `pnpm lint --fix` repeatedly rewrites a few unrelated files; if strict story scoping is required, restore those files after lint or treat deterministic formatting updates as part of the run.
+  - Useful context
+    - Bounded `pnpm dev` validation should include an explicit bootstrap marker check (`[BOOT] Server bootstrap completed`) because lifecycle exit code alone can be noisy under forced termination.
+---
