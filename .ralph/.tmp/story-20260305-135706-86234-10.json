@@ -1,0 +1,14 @@
+{
+  "ok": true,
+  "total": 12,
+  "remaining": 3,
+  "quality_gates": [
+    "pnpm lint",
+    "pnpm build",
+    "pnpm characterization",
+    "pnpm test:unit",
+    "pnpm test:unit:matrix"
+  ],
+  "id": "US-010",
+  "title": "Backfill tests for message command modules"
+}

@@ -272,7 +272,7 @@
     {
       "id": "US-009",
       "title": "Backfill tests for Discord command modules",
-      "status": "in_progress",
+      "status": "done",
       "dependsOn": [
         "US-001",
         "US-002",
@@ -287,13 +287,13 @@
         "Each command module is mapped as covered in the matrix gate."
       ],
       "startedAt": "2026-03-05T14:24:38.557680+00:00",
-      "completedAt": null,
-      "updatedAt": "2026-03-05T14:24:38.557826+00:00"
+      "completedAt": "2026-03-05T14:35:24.732025+00:00",
+      "updatedAt": "2026-03-05T14:35:24.731932+00:00"
     },
     {
       "id": "US-010",
       "title": "Backfill tests for message command modules",
-      "status": "open",
+      "status": "in_progress",
       "dependsOn": [
         "US-001",
         "US-002",
@@ -306,7 +306,10 @@
         "Example: talk/send command builds expected worker payload and triggers downstream call once.",
         "Negative case: empty or blocked message input follows refusal/error path with no outbound side effect.",
         "Message modules are fully represented in pnpm test:unit:matrix output."
-      ]
+      ],
+      "startedAt": "2026-03-05T14:35:26.792279+00:00",
+      "completedAt": null,
+      "updatedAt": "2026-03-05T14:35:26.792417+00:00"
     },
     {
       "id": "US-011",
