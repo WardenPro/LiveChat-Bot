@@ -291,7 +291,7 @@
     {
       "id": "US-003",
       "title": "Refactor REST route loading into domain modules",
-      "status": "in_progress",
+      "status": "done",
       "dependsOn": [
         "US-002"
       ],
@@ -304,13 +304,13 @@
         "Characterization checks for REST routes pass with no contract diff."
       ],
       "startedAt": "2026-03-05T08:41:47.340956+00:00",
-      "completedAt": null,
-      "updatedAt": "2026-03-05T08:41:47.341090+00:00"
+      "completedAt": "2026-03-05T08:52:33.770845+00:00",
+      "updatedAt": "2026-03-05T08:52:33.770750+00:00"
     },
     {
       "id": "US-004",
       "title": "Refactor socket loader lifecycle with strict boundaries",
-      "status": "open",
+      "status": "in_progress",
       "dependsOn": [
         "US-002"
       ],
@@ -321,7 +321,10 @@
         "Example: authenticated overlay client receives the same event sequence and payload structure as baseline.",
         "Negative case: invalid token or malformed payload follows the same rejection/disconnect semantics as baseline.",
         "No new global mutable state is introduced outside existing runtime wiring constraints."
-      ]
+      ],
+      "startedAt": "2026-03-05T08:52:35.848976+00:00",
+      "completedAt": null,
+      "updatedAt": "2026-03-05T08:52:35.849153+00:00"
     },
     {
       "id": "US-005",

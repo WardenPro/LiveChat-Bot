@@ -279,6 +279,18 @@ export const runSocketLifecycleCharacterization = async () => {
   const missingTokenSocket = new FakeOverlaySocket('socket-missing-token', { auth: {} }, fakeIo);
   const missingTokenError = await runAuthMiddleware(middleware, missingTokenSocket);
 
+  const invalidTokenSocket = new FakeOverlaySocket(
+    'socket-invalid-token',
+    {
+      auth: {
+        token: 'invalid-overlay-token',
+      },
+      query: {},
+    },
+    fakeIo,
+  );
+  const invalidTokenError = await runAuthMiddleware(middleware, invalidTokenSocket);
+
   const validSocket = new FakeOverlaySocket(
     'socket-valid-token',
     {
@@ -309,6 +321,12 @@ export const runSocketLifecycleCharacterization = async () => {
     sessionMode: 'normal',
   });
 
+  await validSocket.emitClientEvent(OVERLAY_SOCKET_EVENTS.PLAYBACK_STATE, {
+    jobId: '   ',
+    state: 'unknown-state',
+    remainingMs: Number.NaN,
+  });
+
   await validSocket.triggerDisconnect('transport close');
 
   const peersEvents = fakeIo.emittedEvents.filter((event) => event.eventName === OVERLAY_SOCKET_EVENTS.PEERS);
@@ -316,6 +334,9 @@ export const runSocketLifecycleCharacterization = async () => {
   return {
     missingTokenAuth: {
       errorMessage: missingTokenError?.message || null,
+    },
+    invalidTokenAuth: {
+      errorMessage: invalidTokenError?.message || null,
     },
     validTokenAuth: {
       errorMessage: validTokenErrorMessage,
@@ -330,6 +351,13 @@ export const runSocketLifecycleCharacterization = async () => {
     heartbeatLifecycle: {
       overlayHeartbeatUpdateCount: overlayClientHeartbeatUpdates.length,
       lastSessionMode: validSocket.data.overlaySessionMode || null,
+    },
+    malformedPayloadLifecycle: {
+      playbackStateCallCount: schedulerCalls.onPlaybackState.length,
+      lastPlaybackStatePayloadShape:
+        schedulerCalls.onPlaybackState.length > 0
+          ? toValueShape(schedulerCalls.onPlaybackState[schedulerCalls.onPlaybackState.length - 1])
+          : null,
     },
     disconnectLifecycle: {
       guildBusyUntilClearedCount: guildUpserts.length,

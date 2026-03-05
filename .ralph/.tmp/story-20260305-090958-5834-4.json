@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "total": 14,
+  "remaining": 11,
+  "quality_gates": [
+    "pnpm lint",
+    "pnpm build"
+  ],
+  "id": "US-004",
+  "title": "Refactor socket loader lifecycle with strict boundaries"
+}

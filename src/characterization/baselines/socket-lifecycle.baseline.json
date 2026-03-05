@@ -2,6 +2,9 @@
   "missingTokenAuth": {
     "errorMessage": "missing_token"
   },
+  "invalidTokenAuth": {
+    "errorMessage": "invalid_token"
+  },
   "validTokenAuth": {
     "errorMessage": null,
     "socketDataShape": {
@@ -30,6 +33,15 @@
   "heartbeatLifecycle": {
     "overlayHeartbeatUpdateCount": 1,
     "lastSessionMode": "normal"
+  },
+  "malformedPayloadLifecycle": {
+    "playbackStateCallCount": 1,
+    "lastPlaybackStatePayloadShape": {
+      "guildId": "string",
+      "jobId": "null",
+      "remainingMs": "null",
+      "state": "string"
+    }
   },
   "disconnectLifecycle": {
     "guildBusyUntilClearedCount": 1,
