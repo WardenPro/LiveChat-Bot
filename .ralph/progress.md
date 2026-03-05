@@ -396,3 +396,47 @@ Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/ru
   - Useful context
     - New strict-phase gate currently targets `src/services/{env,errors,validation}` and can be expanded module-by-module as backlog exceptions are removed.
 ---
+## [2026-03-05 12:36:00 CET] - US-010: Eliminate weak typing in critical runtime paths
+Thread: 
+Run: 20260305-090958-5834 (iteration 10)
+Run log: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-090958-5834-iter-10.log
+Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-090958-5834-iter-10.md
+- Guardrails reviewed: yes
+- No-commit run: false
+- Commit: 43b3765 refactor(typing): harden critical auth/media contracts
+- Post-commit status: clean
+- Verification:
+  - Command: pnpm characterization -> PASS
+  - Command: pnpm lint -> PASS
+  - Command: pnpm build -> PASS
+  - Command: API_URL=http://localhost:3333 DISCORD_TOKEN=dev-smoke-token DISCORD_CLIENT_ID=dev-smoke-client DATABASE_URL=file:./sqlite.db LOG=silent npx -y node@20.11.1 $(which pnpm) dev -> FAIL (ERR_PACKAGE_PATH_NOT_EXPORTED)
+- Files changed:
+  - .agents/tasks/prd-livechat-refactor.json
+  - .ralph/guardrails.md
+  - src/characterization/restOverlayPairConsume.characterization.ts
+  - src/characterization/runCharacterization.ts
+  - src/characterization/overlayAuth.characterization.ts
+  - src/characterization/baselines/overlay-auth.baseline.json
+  - src/components/ingest/ingestRoutes.ts
+  - src/components/overlay/overlayRoutes.ts
+  - src/loaders/rest/registerDomainRoutes.ts
+  - src/loaders/socket/socketAuthentication.ts
+  - src/loaders/socket/types.ts
+  - src/services/ingestAuth.ts
+  - src/services/media/mediaIngestion.ts
+  - src/services/overlayAuth.ts
+  - src/typechecks/us010-critical-runtime.typecheck.ts
+- What was implemented
+  - Added explicit auth/media contracts: overlay auth discriminated union (`missing_token` / `invalid_token` / `authenticated`), typed ingest delegate interfaces, and typed media ingestion request/result interfaces.
+  - Replaced unsafe critical casts in overlay/ingest auth and overlay/ingest route handling with typed narrowing and runtime guards while preserving endpoint/socket behavior.
+  - Updated socket auth and overlay routes to consume the new discriminated auth union safely.
+  - Added focused compile-time checks for contract enforcement (including required `createdByDiscordUserId` for ingest client params).
+  - Added and integrated overlay auth characterization coverage plus baseline; stabilized overlay pair characterization time dependency.
+- **Learnings for future iterations:**
+  - Patterns discovered
+  - Legacy Prisma type drift can hide fields present at runtime; explicit delegate interfaces with guards preserve compatibility while restoring compile-time safety.
+  - Gotchas encountered
+  - `pnpm dev` smoke remains sensitive to Node/runtime installation method; `npx node@20` can still trigger `file-type` export resolution issues.
+  - Useful context
+  - Characterization suites should avoid fixed timestamps near current dates to prevent time-based flakiness.
+---
