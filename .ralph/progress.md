@@ -942,3 +942,48 @@ Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/ru
   - Useful context
     - A bounded `pnpm dev` smoke can validate runtime bootstrap (`[BOOT] Server bootstrap completed`) even when placeholder Discord credentials intentionally fail authentication.
 ---
+## [2026-03-05 15:34:19 CET] - US-009: Backfill tests for Discord command modules
+Thread: 
+Run: 20260305-135706-86234 (iteration 9)
+Run log: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-135706-86234-iter-9.log
+Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-135706-86234-iter-9.md
+- Guardrails reviewed: yes
+- No-commit run: false
+- Commit: e68ff1d test(discord-commands): backfill command module tests
+- Post-commit status: `dirty` (.ralph/progress.md pending entry commit)
+- Verification:
+  - Command: pnpm lint -> PASS
+  - Command: pnpm build -> PASS
+  - Command: pnpm characterization -> PASS
+  - Command: pnpm test:unit -> PASS
+  - Command: pnpm test:unit:matrix -> FAIL (expected at this stage; remaining uncovered modules are outside US-009 scope)
+  - Command: log_file=$(mktemp); (API_URL='http://localhost:3000' DISCORD_TOKEN='test-token' DISCORD_CLIENT_ID='test-client' DATABASE_URL='file:./sqlite.db' pnpm dev >"$log_file" 2>&1) & pid=$!; sleep 25; kill -TERM "$pid"; ... -> PASS (bootstrap marker reached; expected Discord 401 with placeholder token)
+- Files changed:
+  - .agents/tasks/prd-module-unit-tests.json
+  - .ralph/.tmp/prompt-20260305-135706-86234-9.md
+  - .ralph/.tmp/story-20260305-135706-86234-9.json
+  - .ralph/.tmp/story-20260305-135706-86234-9.md
+  - .ralph/runs/run-20260305-135706-86234-iter-8.md
+  - tests/unit/components/discord/aliveCommand.test.ts
+  - tests/unit/components/discord/clientCommand.test.ts
+  - tests/unit/components/discord/helpCommand.test.ts
+  - tests/unit/components/discord/infoCommand.test.ts
+  - tests/unit/components/discord/memeAddCommand.test.ts
+  - tests/unit/components/discord/overlaysCommand.test.ts
+  - tests/unit/components/discord/setDefaultTimeCommand.test.ts
+  - tests/unit/components/discord/setDisplayFullCommand.test.ts
+  - tests/unit/components/discord/setMaxTimeCommand.test.ts
+  - .ralph/progress.md
+- What was implemented
+  - Added command-level unit tests for every Discord command module under `src/components/discord/*`.
+  - Verified success payload contracts for `alive`, `help`, `info`, `overlay-code`, `meme-add`, `overlays`, and all settings commands.
+  - Added negative-path coverage for validation/permission/error branches: missing guild context, missing media input, permission denial for admin-only settings commands, and pairing-code collision exhaustion.
+  - Confirmed matrix coverage now maps all targeted Discord command modules to explicit test files.
+- **Learnings for future iterations:**
+  - Patterns discovered
+    - Command handlers are deterministic to test via lightweight interaction stubs plus focused global (`rosetty`, `prisma`, `env`, `logger`) mocks.
+  - Gotchas encountered
+    - Interaction fixture builders must preserve explicit `null` values; `??` defaults can silently bypass command validation branches.
+  - Useful context
+    - `pnpm test:unit:matrix` now reports all `src/components/discord/*` modules as covered while remaining failures are in future US-010/US-011 scope.
+---
