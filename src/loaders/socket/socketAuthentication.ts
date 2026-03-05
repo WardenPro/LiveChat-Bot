@@ -1,5 +1,10 @@
 import { hashOverlayToken } from '../../services/overlayAuth';
 import { parseRequestField } from '../../services/validation/requestParsing';
+import {
+  buildSafeErrorLogContext,
+  createSocketAuthOperationalError,
+  mapErrorToSocketAuthOutput,
+} from '../../services/errors/runtimeErrorHandling';
 
 import type { OverlaySocket, OverlaySocketAuthContext, OverlaySocketClientRecord } from './types';
 import { normalizeOverlaySessionMode, toNonEmptyString } from './valueUtils';
@@ -47,22 +52,34 @@ const applySocketAuthContext = (socket: OverlaySocket, context: OverlaySocketAut
   socket.data.overlayAuthorImage = context.overlayAuthorImage;
 };
 
+const forwardSocketAuthError = (error: unknown, next: (error?: Error) => void) => {
+  const mapped = mapErrorToSocketAuthOutput(error);
+  next(mapped.transportError);
+  return mapped;
+};
+
 export const registerOverlaySocketAuthentication = (fastify: FastifyCustomInstance) => {
   fastify.io.use(async (socket, next) => {
     try {
       const token = getTokenFromSocketHandshake(socket);
 
       if (!token) {
-        logger.warn({ socketId: socket.id }, '[OVERLAY] Socket auth failed: missing token');
-        next(new Error('missing_token'));
+        const mapped = forwardSocketAuthError(
+          createSocketAuthOperationalError('missing_token', { socketId: socket.id }),
+          next,
+        );
+        logger.warn({ socketId: socket.id, category: mapped.category }, '[OVERLAY] Socket auth failed: missing token');
         return;
       }
 
       const client = await resolveOverlayClientByToken(token);
 
       if (!client) {
-        logger.warn({ socketId: socket.id }, '[OVERLAY] Socket auth failed: invalid token');
-        next(new Error('invalid_token'));
+        const mapped = forwardSocketAuthError(
+          createSocketAuthOperationalError('invalid_token', { socketId: socket.id }),
+          next,
+        );
+        logger.warn({ socketId: socket.id, category: mapped.category }, '[OVERLAY] Socket auth failed: invalid token');
         return;
       }
 
@@ -80,8 +97,18 @@ export const registerOverlaySocketAuthentication = (fastify: FastifyCustomInstan
 
       next();
     } catch (error) {
-      logger.error({ err: error, socketId: socket.id }, '[OVERLAY] Socket auth error');
-      next(new Error('auth_error'));
+      const mapped = forwardSocketAuthError(error, next);
+      const logContext = buildSafeErrorLogContext(error, {
+        socketId: socket.id,
+        category: mapped.category,
+        socketCode: mapped.socketCode,
+      });
+
+      if (mapped.logLevel === 'warn') {
+        logger.warn(logContext, '[OVERLAY] Socket auth error');
+      } else {
+        logger.error(logContext, '[OVERLAY] Socket auth error');
+      }
     }
   });
 };

@@ -35,6 +35,22 @@
       "ephemeral": "boolean"
     }
   },
+  "failingOperationalCommandBeforeReply": {
+    "replyCallCount": 1,
+    "followUpCallCount": 0,
+    "replyShape": {
+      "embeds": [
+        {
+          "data": {
+            "color": "number",
+            "description": "string",
+            "title": "string"
+          }
+        }
+      ],
+      "ephemeral": "boolean"
+    }
+  },
   "helpCommandInteraction": {
     "replyCallCount": 1,
     "followUpCallCount": 0,

@@ -30,6 +30,7 @@ const loadSuites = async () => {
   const { runDiscordExecutionCharacterization } = await import('./discordExecution.characterization');
   const { runDiscordRegistrationCharacterization } = await import('./discordRegistration.characterization');
   const { runMediaLifecycleCharacterization } = await import('./mediaLifecycle.characterization');
+  const { runErrorHandlingCharacterization } = await import('./errorHandling.characterization');
 
   return [
     {
@@ -59,6 +60,10 @@ const loadSuites = async () => {
     {
       name: 'media-lifecycle',
       run: runMediaLifecycleCharacterization,
+    },
+    {
+      name: 'error-handling',
+      run: runErrorHandlingCharacterization,
     },
   ];
 };

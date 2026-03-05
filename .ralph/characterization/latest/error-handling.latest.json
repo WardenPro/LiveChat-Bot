@@ -1,0 +1,24 @@
+{
+  "requestError": {
+    "statusCode": 422,
+    "bodyShape": {
+      "error": "string"
+    }
+  },
+  "operationalError": {
+    "statusCode": 400,
+    "bodyShape": {
+      "error": "string"
+    }
+  },
+  "unexpectedError": {
+    "statusCode": 500,
+    "bodyShape": {
+      "error": "string"
+    }
+  },
+  "safeLogContext": {
+    "leakedSensitiveValue": false,
+    "redactionMarkerPresent": true
+  }
+}

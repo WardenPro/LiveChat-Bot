@@ -1,0 +1,34 @@
+{
+  "validPayload": {
+    "statusCode": 200,
+    "bodyShape": {
+      "client": {
+        "createdAt": "string",
+        "createdByDiscordUserId": "string",
+        "defaultAuthorImage": "string",
+        "defaultAuthorName": "string",
+        "guildId": "string",
+        "id": "string",
+        "label": "string"
+      },
+      "created": "boolean",
+      "ingestApiToken": "string"
+    },
+    "persistedDataShape": {
+      "createdByDiscordUserId": "string",
+      "defaultAuthorImage": "string",
+      "defaultAuthorName": "string",
+      "guildId": "string",
+      "label": "string",
+      "tokenHash": "string"
+    },
+    "persistedCreatedByDiscordUserId": "author-123"
+  },
+  "invalidAuthorDiscordUserId": {
+    "statusCode": 400,
+    "bodyShape": {
+      "error": "string"
+    },
+    "error": "invalid_author_discord_user_id"
+  }
+}

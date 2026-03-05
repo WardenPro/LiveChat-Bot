@@ -1,5 +1,6 @@
 import { Client, EmbedBuilder, Events } from 'discord.js';
 import type { ChatInputCommandInteraction } from 'discord.js';
+import { buildSafeErrorLogContext, mapErrorToCommandOutput } from '../../services/errors/runtimeErrorHandling';
 
 import { asDiscordCommandClient } from './types';
 
@@ -40,7 +41,15 @@ export const registerDiscordInteractionExecutionHandler = (client: Client) => {
     try {
       await command.handler(interaction, discordClient);
     } catch (error) {
-      logger.error(error);
+      const mapped = mapErrorToCommandOutput(error);
+      logger.error(
+        buildSafeErrorLogContext(error, {
+          commandName: interaction.commandName,
+          category: mapped.category,
+          responseCode: mapped.responseCode,
+        }),
+        '[DISCORD] Command execution failed',
+      );
       await replyWithCommandError(interaction);
     }
   });

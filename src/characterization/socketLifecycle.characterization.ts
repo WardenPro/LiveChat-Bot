@@ -170,6 +170,8 @@ export const runSocketLifecycleCharacterization = async () => {
   ensureCharacterizationGlobals();
 
   const overlayToken = 'valid-overlay-token';
+  const throwingOverlayToken = 'throwing-overlay-token';
+  const throwingOverlayTokenHash = hashOverlayToken(throwingOverlayToken);
   const overlayClientState: OverlayClientState = {
     id: 'overlay-client-socket-1',
     guildId: 'guild-socket-1',
@@ -191,6 +193,10 @@ export const runSocketLifecycleCharacterization = async () => {
     },
     overlayClient: {
       findFirst: async (args: { where: { tokenHash: string; revokedAt: null } }) => {
+        if (args.where.tokenHash === throwingOverlayTokenHash) {
+          throw new Error('overlay_token=super-secret-value');
+        }
+
         if (args.where.tokenHash !== overlayClientState.tokenHash || overlayClientState.revokedAt !== null) {
           return null;
         }
@@ -291,6 +297,18 @@ export const runSocketLifecycleCharacterization = async () => {
   );
   const invalidTokenError = await runAuthMiddleware(middleware, invalidTokenSocket);
 
+  const throwingTokenSocket = new FakeOverlaySocket(
+    'socket-throwing-token',
+    {
+      auth: {
+        token: throwingOverlayToken,
+      },
+      query: {},
+    },
+    fakeIo,
+  );
+  const throwingTokenError = await runAuthMiddleware(middleware, throwingTokenSocket);
+
   const validSocket = new FakeOverlaySocket(
     'socket-valid-token',
     {
@@ -337,6 +355,9 @@ export const runSocketLifecycleCharacterization = async () => {
     },
     invalidTokenAuth: {
       errorMessage: invalidTokenError?.message || null,
+    },
+    throwingTokenAuth: {
+      errorMessage: throwingTokenError?.message || null,
     },
     validTokenAuth: {
       errorMessage: validTokenErrorMessage,

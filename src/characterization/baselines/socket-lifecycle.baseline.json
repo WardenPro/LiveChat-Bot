@@ -5,6 +5,9 @@
   "invalidTokenAuth": {
     "errorMessage": "invalid_token"
   },
+  "throwingTokenAuth": {
+    "errorMessage": "auth_error"
+  },
   "validTokenAuth": {
     "errorMessage": null,
     "socketDataShape": {

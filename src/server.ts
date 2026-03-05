@@ -13,6 +13,7 @@ import { ensureMediaStorageDir, startMediaCachePurgeWorker } from './services/me
 import { startPlaybackJobPurgeWorker } from './services/playbackJobs';
 import { startPairingCodePurgeWorker } from './services/pairingCodes';
 import { initializePlaybackScheduler } from './services/playbackScheduler';
+import { createHttpErrorHandler } from './services/errors/runtimeErrorHandling';
 
 const corsAllowedHeaders = [
   'Origin',
@@ -26,12 +27,39 @@ const corsAllowedHeaders = [
   'Cookie',
 ];
 
+const loggerRedactionPaths = [
+  'token',
+  'tokenHash',
+  'secret',
+  'password',
+  'credentials',
+  'authorization',
+  'cookie',
+  '*.token',
+  '*.tokenHash',
+  '*.secret',
+  '*.password',
+  '*.credentials',
+  '*.authorization',
+  '*.cookie',
+  'req.headers.authorization',
+  'req.headers.cookie',
+  'headers.authorization',
+  'headers.cookie',
+];
+
 export const runServer = async () => {
   const logLevel = env.LOG || 'info';
   // LOAD API FRAMEWORK
   //@ts-ignore
   const fastify: FastifyCustomInstance = Fastify({
-    logger: { level: logLevel },
+    logger: {
+      level: logLevel,
+      redact: {
+        paths: loggerRedactionPaths,
+        censor: '[REDACTED]',
+      },
+    },
     disableRequestLogging: true,
   });
 
@@ -110,30 +138,7 @@ export const runServer = async () => {
     };
   });
 
-  fastify.setErrorHandler(async (error, request, reply) => {
-    const rawStatusCode = (error as { statusCode?: number })?.statusCode;
-    const statusCode =
-      typeof rawStatusCode === 'number' && Number.isFinite(rawStatusCode) && rawStatusCode >= 400 && rawStatusCode < 600
-        ? Math.trunc(rawStatusCode)
-        : 500;
-
-    if (statusCode >= 500) {
-      logger.error({ err: error, method: request.method, path: request.url }, '[HTTP] Internal error');
-    } else {
-      const message = error instanceof Error ? error.message : String(error);
-      logger.warn(
-        { method: request.method, path: request.url, statusCode, message },
-        '[HTTP] Request error',
-      );
-    }
-
-    if (reply.sent) {
-      return;
-    }
-
-    const payload = statusCode >= 500 ? { error: 'internal_error' } : { error: 'request_error' };
-    return reply.code(statusCode).send(payload);
-  });
+  fastify.setErrorHandler(createHttpErrorHandler(logger));
 
   loadRosetty();
   logger.info('[BOOT] I18N loaded');

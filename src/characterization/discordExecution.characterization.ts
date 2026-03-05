@@ -1,5 +1,6 @@
 import { helpCommand } from '../components/discord/helpCommand';
 import { registerDiscordInteractionExecutionHandler } from '../loaders/discord/interactionExecution';
+import { OperationalError } from '../services/errors/runtimeErrorHandling';
 
 import { ensureCharacterizationGlobals, toValueShape } from './utils';
 
@@ -102,6 +103,18 @@ export const runDiscordExecutionCharacterization = async () => {
       throw new Error('handler_failed');
     },
   });
+  fakeDiscordClient.commands.set('explode-operational', {
+    handler: async () => {
+      throw new OperationalError({
+        category: 'operational',
+        code: 'command_failed',
+        message: 'command_token=super-secret-value',
+        context: {
+          token: 'super-secret-value',
+        },
+      });
+    },
+  });
   fakeDiscordClient.commands.set('help', helpCommand() as unknown as FakeDiscordCommand);
 
   global.discordClient = fakeDiscordClient as any;
@@ -130,6 +143,14 @@ export const runDiscordExecutionCharacterization = async () => {
 
   await fakeDiscordClient.emit('interactionCreate', failingCommandWithReply.interaction);
 
+  const failingOperationalCommand = createInteraction({
+    commandName: 'explode-operational',
+    replied: false,
+    deferred: false,
+  });
+
+  await fakeDiscordClient.emit('interactionCreate', failingOperationalCommand.interaction);
+
   const helpCommandInteraction = createInteraction({
     commandName: 'help',
   });
@@ -154,6 +175,12 @@ export const runDiscordExecutionCharacterization = async () => {
       followUpCallCount: failingCommandWithReply.followUps.length,
       followUpShape:
         failingCommandWithReply.followUps.length > 0 ? toValueShape(failingCommandWithReply.followUps[0]) : null,
+    },
+    failingOperationalCommandBeforeReply: {
+      replyCallCount: failingOperationalCommand.replies.length,
+      followUpCallCount: failingOperationalCommand.followUps.length,
+      replyShape:
+        failingOperationalCommand.replies.length > 0 ? toValueShape(failingOperationalCommand.replies[0]) : null,
     },
     helpCommandInteraction: {
       replyCallCount: helpCommandInteraction.replies.length,
