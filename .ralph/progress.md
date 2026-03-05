@@ -651,3 +651,45 @@ Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/ru
   - Useful context
     - `test:unit:matrix` is currently a temporary alias and should be replaced by the dedicated module inventory gate in US-002.
 ---
+## [2026-03-05 14:14 CET] - US-002: Create module inventory and missing-test gate
+Thread: 
+Run: 20260305-135706-86234 (iteration 2)
+Run log: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-135706-86234-iter-2.log
+Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-135706-86234-iter-2.md
+- Guardrails reviewed: yes
+- No-commit run: false
+- Commit: b324ba5 test(unit-matrix): add module inventory gate
+- Post-commit status: `clean`
+- Verification:
+  - Command: pnpm lint -> PASS
+  - Command: pnpm build -> PASS
+  - Command: pnpm characterization -> PASS
+  - Command: pnpm test:unit -> PASS
+  - Command: pnpm test:unit:matrix -> FAIL (expected; reports uncovered runtime modules and exits non-zero)
+  - Command: API_URL='http://localhost:3000' DISCORD_TOKEN='invalid-token' DISCORD_CLIENT_ID='1234567890' DATABASE_URL='file:./sqlite.db' pnpm dev (bounded smoke) -> PASS (startup reached expected Discord 401 with invalid token)
+- Files changed:
+  - .agents/tasks/prd-module-unit-tests.json
+  - .ralph/.tmp/prompt-20260305-135706-86234-2.md
+  - .ralph/.tmp/story-20260305-135706-86234-2.json
+  - .ralph/.tmp/story-20260305-135706-86234-2.md
+  - .ralph/runs/run-20260305-135706-86234-iter-1.md
+  - package.json
+  - tests/unit/matrix/moduleInventory.ts
+  - tests/unit/matrix/runUnitTestMatrix.ts
+  - tests/unit/matrix/unitTestMatrix.test.ts
+  - tests/unit/matrix/unitTestMatrix.ts
+  - tests/unit/services/messages/richOverlayPayload.test.ts
+- What was implemented
+  - Added a deterministic runtime module inventory utility that scans `src/**/*.ts` and excludes `src/characterization/**`, `src/architecture/**`, declaration files (`*.d.ts`), and typecheck-only files (`src/typechecks/**`, `*.typecheck.ts`).
+  - Implemented a unit-test matrix report generator and CLI gate that maps runtime modules to mirrored unit-test paths and emits machine-readable JSON with `status`, `summary`, `coveredModules`, and `missingModules`.
+  - Replaced `test:unit:matrix` placeholder alias with the dedicated matrix gate command.
+  - Added matrix utility tests covering both positive (covered module) and negative (missing module path + failing status) cases.
+  - Added one mapped runtime unit test for `src/services/messages/richOverlayPayload.ts` so live matrix output includes a covered-module example.
+- **Learnings for future iterations:**
+  - Patterns discovered
+    - Deterministic path sorting and normalized posix paths keep matrix output stable for CI diffs.
+  - Gotchas encountered
+    - With the current backfill state, `test:unit:matrix` is expected to fail until additional story modules gain mapped unit tests.
+  - Useful context
+    - Matrix output is JSON-first and directly usable in CI logs for parsing missing module paths.
+---
