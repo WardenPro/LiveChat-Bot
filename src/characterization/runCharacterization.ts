@@ -21,12 +21,17 @@ const ensureCharacterizationProcessEnv = () => {
 };
 
 const loadSuites = async () => {
+  const { runRestRouteDomainsCharacterization } = await import('./restRouteDomains.characterization');
   const { runRestOverlayPairConsumeCharacterization } = await import('./restOverlayPairConsume.characterization');
   const { runSocketLifecycleCharacterization } = await import('./socketLifecycle.characterization');
   const { runDiscordExecutionCharacterization } = await import('./discordExecution.characterization');
   const { runMediaLifecycleCharacterization } = await import('./mediaLifecycle.characterization');
 
   return [
+    {
+      name: 'rest-route-domains',
+      run: runRestRouteDomainsCharacterization,
+    },
     {
       name: 'rest-overlay-pair-consume',
       run: runRestOverlayPairConsumeCharacterization,

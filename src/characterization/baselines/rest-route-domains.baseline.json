@@ -1,0 +1,39 @@
+{
+  "overlayConfig": {
+    "statusCode": 200,
+    "bodyShape": {
+      "defaultMediaTime": "number",
+      "guildId": "string",
+      "maxMediaTime": "number",
+      "protocolVersion": "string",
+      "showTextDefault": "boolean"
+    },
+    "payloadKeys": [
+      "defaultMediaTime",
+      "guildId",
+      "maxMediaTime",
+      "protocolVersion",
+      "showTextDefault"
+    ]
+  },
+  "ingestPairConsumeMalformed": {
+    "statusCode": 400,
+    "bodyShape": {
+      "error": "string"
+    }
+  },
+  "adminRuntimeSettingsUnauthorized": {
+    "statusCode": 401,
+    "bodyShape": {
+      "error": "string"
+    }
+  },
+  "unsupportedRoute": {
+    "statusCode": 404,
+    "bodyShape": {
+      "error": "string",
+      "message": "string",
+      "statusCode": "number"
+    }
+  }
+}

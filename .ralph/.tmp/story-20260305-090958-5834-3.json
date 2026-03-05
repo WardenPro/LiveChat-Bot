@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "total": 14,
+  "remaining": 12,
+  "quality_gates": [
+    "pnpm lint",
+    "pnpm build"
+  ],
+  "id": "US-003",
+  "title": "Refactor REST route loading into domain modules"
+}
