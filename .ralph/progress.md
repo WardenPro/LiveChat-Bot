@@ -260,3 +260,46 @@ Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/ru
   - Useful context
     - The new characterization suite locks both acceptance criteria examples for US-006 so future refactors can detect drift in admin ingest-client input behavior.
 ---
+## [2026-03-05 10:49:29 CET] - US-007: Standardize safe error handling and logging
+Thread: 
+Run: 20260305-090958-5834 (iteration 7)
+Run log: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-090958-5834-iter-7.log
+Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-090958-5834-iter-7.md
+- Guardrails reviewed: yes
+- No-commit run: false
+- Commit: f0cabb8 refactor(error-handling): centralize safe error mapping
+- Post-commit status: `clean`
+- Verification:
+  - Command: pnpm characterization -- --update-baseline -> PASS
+  - Command: pnpm characterization -> PASS
+  - Command: pnpm lint -> PASS
+  - Command: pnpm build -> PASS
+  - Command: pnpm dev -> FAIL (missing required env vars in this workspace)
+  - Command: API_URL=http://localhost:3333 DISCORD_TOKEN=dev-token DISCORD_CLIENT_ID=dev-client-id DATABASE_URL=file:./sqlite.db pnpm dev -> FAIL (existing runtime issue: `ERR_PACKAGE_PATH_NOT_EXPORTED` from `file-type` under local Node v24)
+- Files changed:
+  - .agents/tasks/prd-livechat-refactor.json
+  - src/services/errors/runtimeErrorHandling.ts
+  - src/server.ts
+  - src/loaders/socket/socketAuthentication.ts
+  - src/loaders/discord/interactionExecution.ts
+  - src/characterization/errorHandling.characterization.ts
+  - src/characterization/runCharacterization.ts
+  - src/characterization/discordExecution.characterization.ts
+  - src/characterization/socketLifecycle.characterization.ts
+  - src/characterization/baselines/error-handling.baseline.json
+  - src/characterization/baselines/discord-execution-flow.baseline.json
+  - src/characterization/baselines/socket-lifecycle.baseline.json
+  - src/characterization/RUNBOOK.md
+- What was implemented
+  - Added a centralized runtime error module with typed error categories, `OperationalError`, shared mappers for HTTP/socket/command outputs, and safe log redaction helpers for sensitive keys/values.
+  - Wired the shared mappers into global Fastify error handling, overlay socket authentication failures, and Discord interaction execution failures while preserving existing user-visible response contracts.
+  - Added characterization coverage for HTTP error handling + redaction behavior and extended socket/Discord characterization negative paths (unexpected socket auth failure and known operational command failure).
+- **Learnings for future iterations:**
+  - Patterns discovered
+    - Error contract preservation is safer when status/body mapping is centralized and surface-specific handlers only pass contextual metadata.
+  - Gotchas encountered
+    - `pnpm lint` uses `--fix` and can modify unrelated files; restoring non-story files before commit is required to keep strict scope.
+    - Local `pnpm dev` validation is blocked in this workspace by an existing Node runtime/package export mismatch (`file-type`) unrelated to US-007.
+  - Useful context
+    - Characterization now includes an `error-handling` suite that locks the centralized HTTP mapping contract and sensitive log redaction expectations.
+---
