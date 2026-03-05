@@ -19,13 +19,13 @@
   "license": "ISC",
   "devDependencies": {
     "@commitlint/cli": "18.6.1",
-    "@commitlint/config-conventional": "18.6.2",
+    "@commitlint/config-conventional": "18.6.3",
     "@fastify/cors": "^11.0.0",
-    "@types/node": "20.11.17",
-    "@typescript-eslint/eslint-plugin": "7.0.1",
-    "@typescript-eslint/parser": "7.0.1",
+    "@types/node": "20.11.30",
+    "@typescript-eslint/eslint-plugin": "7.0.2",
+    "@typescript-eslint/parser": "7.0.2",
     "eslint": "8.56.0",
-    "eslint-config-prettier": "9.1.0",
+    "eslint-config-prettier": "9.1.2",
     "eslint-import-resolver-typescript": "^3.6.1",
     "eslint-plugin-import": "2.29.1",
     "eslint-plugin-prettier": "5.1.3",
@@ -39,7 +39,6 @@
     "@gquittet/graceful-server": "^4.0.8",
     "@livechat/overlay-protocol": "file:packages/overlay-protocol",
     "@prisma/client": "^5.10.2",
-    "@t3-oss/env-core": "^0.8.0",
     "date-fns": "^3.3.1",
     "discord.js": "^14.14.1",
     "dotenv": "^16.4.2",
@@ -52,8 +51,8 @@
     "reflect-metadata": "^0.2.1",
     "rosetty": "^3.0.22",
     "socket.io": "^4.7.4",
-    "zod": "^3.22.4",
-    "zlib-sync": "^0.1.9"
+    "zlib-sync": "^0.1.9",
+    "zod": "^3.22.4"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8",
