@@ -255,7 +255,7 @@
     {
       "id": "US-001",
       "title": "Establish characterization baselines for current behavior",
-      "status": "in_progress",
+      "status": "done",
       "dependsOn": [],
       "description": "As a maintainer, I want executable characterization coverage for current contracts so that refactoring can proceed without accidental behavior drift.",
       "acceptanceCriteria": [
@@ -266,13 +266,13 @@
         "A runbook documents how to execute characterization checks before each refactor slice."
       ],
       "startedAt": "2026-03-05T08:09:58.722289+00:00",
-      "completedAt": null,
-      "updatedAt": "2026-03-05T08:09:58.722419+00:00"
+      "completedAt": "2026-03-05T08:31:34.831310+00:00",
+      "updatedAt": "2026-03-05T08:31:34.831218+00:00"
     },
     {
       "id": "US-002",
       "title": "Define module boundaries and compatibility map",
-      "status": "open",
+      "status": "in_progress",
       "dependsOn": [
         "US-001"
       ],
@@ -283,7 +283,10 @@
         "Example: existing internal import path continues to resolve via compatibility wrapper during migration phase.",
         "Negative case: any proposed module move that would alter an external entrypoint is rejected and logged as out of scope.",
         "Boundary rules include prohibited cross-layer dependencies and approved dependency directions."
-      ]
+      ],
+      "startedAt": "2026-03-05T08:31:36.911010+00:00",
+      "completedAt": null,
+      "updatedAt": "2026-03-05T08:31:36.911133+00:00"
     },
     {
       "id": "US-003",
