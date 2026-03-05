@@ -1,0 +1,14 @@
+{
+  "ok": true,
+  "total": 12,
+  "remaining": 11,
+  "quality_gates": [
+    "pnpm lint",
+    "pnpm build",
+    "pnpm characterization",
+    "pnpm test:unit",
+    "pnpm test:unit:matrix"
+  ],
+  "id": "US-002",
+  "title": "Create module inventory and missing-test gate"
+}

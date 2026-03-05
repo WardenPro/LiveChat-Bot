@@ -111,7 +111,7 @@
     {
       "id": "US-001",
       "title": "Set up deterministic unit-test foundation",
-      "status": "in_progress",
+      "status": "done",
       "dependsOn": [],
       "description": "As a maintainer, I want a stable unit-test toolchain and scripts so that module-level tests can run consistently on local and CI environments.",
       "acceptanceCriteria": [
@@ -122,13 +122,13 @@
         "pnpm lint and pnpm build still pass after test framework setup."
       ],
       "startedAt": "2026-03-05T12:57:06.187637+00:00",
-      "completedAt": null,
-      "updatedAt": "2026-03-05T12:57:06.187745+00:00"
+      "completedAt": "2026-03-05T13:05:16.250800+00:00",
+      "updatedAt": "2026-03-05T13:05:16.250694+00:00"
     },
     {
       "id": "US-002",
       "title": "Create module inventory and missing-test gate",
-      "status": "open",
+      "status": "in_progress",
       "dependsOn": [
         "US-001"
       ],
@@ -139,7 +139,10 @@
         "Example: when a module has a matching test file, test:unit:matrix reports it as covered.",
         "Negative case: when a new module is added without a test file, test:unit:matrix fails and prints the missing module path.",
         "Matrix output is machine-readable enough for CI logs and developer troubleshooting."
-      ]
+      ],
+      "startedAt": "2026-03-05T13:05:18.328647+00:00",
+      "completedAt": null,
+      "updatedAt": "2026-03-05T13:05:18.328810+00:00"
     },
     {
       "id": "US-003",

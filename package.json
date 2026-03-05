@@ -11,7 +11,7 @@
     "characterization": "tsx ./src/characterization/runCharacterization.ts",
     "test:unit": "vitest run --config vitest.config.ts",
     "test:unit:coverage": "vitest run --config vitest.config.ts --coverage",
-    "test:unit:matrix": "pnpm test:unit",
+    "test:unit:matrix": "tsx ./tests/unit/matrix/runUnitTestMatrix.ts",
     "lint": "eslint src --ext .ts --fix",
     "prepare": "husky install",
     "generate": "prisma generate",
