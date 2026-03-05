@@ -570,3 +570,39 @@ Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/ru
   - Useful context
     - Bounded `pnpm dev` validation should include an explicit bootstrap marker check (`[BOOT] Server bootstrap completed`) because lifecycle exit code alone can be noisy under forced termination.
 ---
+## [2026-03-05 13:43:36 CET] - US-014: Execute full backward-compatibility verification and release checklist
+Thread: 62637
+Run: 20260305-090958-5834 (iteration 14)
+Run log: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-090958-5834-iter-14.log
+Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-090958-5834-iter-14.md
+- Guardrails reviewed: yes
+- No-commit run: false
+- Commit: 4131c2e docs(release): add US-014 compatibility checklist
+- Post-commit status: `clean`
+- Verification:
+  - Command: pnpm characterization -> PASS
+  - Command: pnpm lint -> PASS
+  - Command: pnpm build -> PASS
+  - Command: pnpm generate -> PASS
+  - Command: DATABASE_URL='file:./sqlite.db' pnpm migration:up -> PASS
+  - Command: API_URL='http://localhost:3333' DISCORD_TOKEN='dev-smoke-token' DISCORD_CLIENT_ID='dev-smoke-client' DATABASE_URL='file:./sqlite.db' pnpm dev (bounded smoke with bootstrap marker check) -> PASS (bootstrap reached; Discord auth failed as expected with dummy credentials)
+- Files changed:
+  - .agents/tasks/prd-livechat-refactor.json
+  - .ralph/.tmp/prompt-20260305-090958-5834-14.md
+  - .ralph/.tmp/story-20260305-090958-5834-14.json
+  - .ralph/.tmp/story-20260305-090958-5834-14.md
+  - .ralph/runs/run-20260305-090958-5834-iter-13.md
+  - src/architecture/release-checklist-us014.md
+- What was implemented
+  - Executed the full backward-compatibility verification gate and confirmed no characterization baseline drift across REST, socket, Discord, env parsing, and database-side effects suites.
+  - Ran global quality gates and Prisma runtime checks required for release confidence.
+  - Added a dedicated release checklist + residual risk note in `src/architecture/release-checklist-us014.md`, including explicit release-blocking criteria on contract drift.
+- **Learnings for future iterations:**
+  - Patterns discovered
+    - Characterization baseline enforcement (`pnpm characterization`) is sufficient to act as a hard contract-drift blocker for refactor release gates.
+  - Gotchas encountered
+    - `pnpm migration:up` fails when `DATABASE_URL` is not set explicitly outside the `pnpm dev` path.
+    - `pnpm dev` is best validated with a bounded run + explicit bootstrap marker check because dummy Discord credentials produce expected auth failures after startup.
+  - Useful context
+    - Current release artifact coverage for `US-014` is consolidated in `src/architecture/release-checklist-us014.md` and backed by `.ralph/characterization/latest/*.latest.json` outputs.
+---
