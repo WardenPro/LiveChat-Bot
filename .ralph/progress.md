@@ -219,3 +219,44 @@ Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/ru
   - Useful context
     - `pnpm dev` still fails in this environment from an existing `file-type` package export/runtime mismatch unrelated to this story’s refactor.
 ---
+## [2026-03-05 10:34:01 CET] - US-006: Centralize input validation and request parsing
+Thread: 
+Run: 20260305-090958-5834 (iteration 6)
+Run log: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-090958-5834-iter-6.log
+Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-090958-5834-iter-6.md
+- Guardrails reviewed: yes
+- No-commit run: false
+- Commit: ceba687 refactor(validation): centralize request parsing (or `none` + reason)
+- Post-commit status: remaining files: .agents/tasks/prd-livechat-refactor.json, .ralph/.tmp/prompt-20260305-090958-5834-6.md, .ralph/.tmp/story-20260305-090958-5834-6.json, .ralph/.tmp/story-20260305-090958-5834-6.md, .ralph/characterization/latest/admin-ingest-client-validation.latest.json, .ralph/runs/run-20260305-090958-5834-iter-5.md
+- Verification:
+  - Command: pnpm characterization -- --update-baseline -> PASS
+  - Command: pnpm characterization -> PASS
+  - Command: pnpm lint -> PASS
+  - Command: pnpm build -> PASS
+  - Command: pnpm dev -> FAIL (missing local env vars including DATABASE_URL)
+  - Command: API_URL=http://localhost:3333 DISCORD_TOKEN=dev-token DISCORD_CLIENT_ID=dev-client DATABASE_URL=file:./sqlite.db pnpm dev -> FAIL (existing runtime import error: ERR_PACKAGE_PATH_NOT_EXPORTED from file-type)
+- Files changed:
+  - src/services/validation/requestParsing.ts
+  - src/components/admin/adminRoutes.ts
+  - src/components/ingest/ingestRoutes.ts
+  - src/components/overlay/overlayRoutes.ts
+  - src/loaders/socket/valueUtils.ts
+  - src/loaders/socket/socketAuthentication.ts
+  - src/loaders/socket/socketEventDispatch.ts
+  - src/characterization/adminIngestClientValidation.characterization.ts
+  - src/characterization/baselines/admin-ingest-client-validation.baseline.json
+  - src/characterization/runCharacterization.ts
+  - src/characterization/RUNBOOK.md
+- What was implemented
+  - Added a shared `requestParsing` validation utility module with explicit TypeScript input/output types for non-empty string parsing, boolean flag parsing, optional booleans, optional integers, optional duration seconds, and generic body/params/query field parsing.
+  - Applied shared validators to sensitive REST and socket paths while preserving contract semantics, including admin ingest-client creation payload parsing (`invalid_author_discord_user_id` behavior unchanged), overlay/ingest request bodies, socket handshake token/session mode parsing, and socket payload field parsing.
+  - Added a characterization suite for admin ingest-client validation (positive persistence path and invalid author ID rejection) and wired it into the characterization run with a dedicated baseline.
+- **Learnings for future iterations:**
+  - Patterns discovered
+    - Generic field parsers (`parseRequestField` + body/params/query wrappers) reduce duplicated coercion logic while keeping route-level validation outcomes stable.
+  - Gotchas encountered
+    - `pnpm lint` runs with `--fix`; story-scoped commits require restoring unrelated auto-format changes before staging.
+    - `pnpm dev` needs explicit env vars in this workspace; even with vars set, runtime currently fails early because of an existing `file-type` package export issue.
+  - Useful context
+    - The new characterization suite locks both acceptance criteria examples for US-006 so future refactors can detect drift in admin ingest-client input behavior.
+---
