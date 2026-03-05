@@ -1,22 +1,16 @@
 import { hashOverlayToken } from '../../services/overlayAuth';
+import { parseRequestField } from '../../services/validation/requestParsing';
 
 import type { OverlaySocket, OverlaySocketAuthContext, OverlaySocketClientRecord } from './types';
 import { normalizeOverlaySessionMode, toNonEmptyString } from './valueUtils';
 
 const getTokenFromSocketHandshake = (socket: OverlaySocket): string | null => {
-  const authToken = socket.handshake?.auth?.token;
-
-  if (typeof authToken === 'string' && authToken.trim()) {
-    return authToken.trim();
+  const authToken = parseRequestField(socket.handshake?.auth, 'token', toNonEmptyString);
+  if (authToken) {
+    return authToken;
   }
 
-  const queryToken = socket.handshake?.query?.token;
-
-  if (typeof queryToken === 'string' && queryToken.trim()) {
-    return queryToken.trim();
-  }
-
-  return null;
+  return parseRequestField(socket.handshake?.query, 'token', toNonEmptyString) || null;
 };
 
 const resolveOverlayClientByToken = async (token: string): Promise<OverlaySocketClientRecord | null> => {
@@ -31,7 +25,7 @@ const resolveOverlayClientByToken = async (token: string): Promise<OverlaySocket
 };
 
 const buildSocketAuthContext = (socket: OverlaySocket, client: OverlaySocketClientRecord): OverlaySocketAuthContext => {
-  const sessionModeFromHandshake = toNonEmptyString(socket.handshake?.auth?.sessionMode);
+  const sessionModeFromHandshake = parseRequestField(socket.handshake?.auth, 'sessionMode', toNonEmptyString);
   const sessionModeFromClient = client.sessionMode;
 
   return {

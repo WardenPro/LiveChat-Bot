@@ -1,13 +1,7 @@
+import { parseNonEmptyStringOrUndefined } from '../../services/validation/requestParsing';
 import type { OverlaySessionMode } from '@livechat/overlay-protocol';
 
-export const toNonEmptyString = (value: unknown): string | undefined => {
-  if (typeof value !== 'string') {
-    return undefined;
-  }
-
-  const normalized = value.trim();
-  return normalized.length > 0 ? normalized : undefined;
-};
+export const toNonEmptyString = parseNonEmptyStringOrUndefined;
 
 export const normalizeOverlaySessionMode = (value: unknown): OverlaySessionMode => {
   if (typeof value === 'string' && value.trim().toLowerCase() === 'invite_read_only') {

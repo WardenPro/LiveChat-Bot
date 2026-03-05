@@ -23,6 +23,9 @@ const ensureCharacterizationProcessEnv = () => {
 const loadSuites = async () => {
   const { runRestRouteDomainsCharacterization } = await import('./restRouteDomains.characterization');
   const { runRestOverlayPairConsumeCharacterization } = await import('./restOverlayPairConsume.characterization');
+  const { runAdminIngestClientValidationCharacterization } = await import(
+    './adminIngestClientValidation.characterization'
+  );
   const { runSocketLifecycleCharacterization } = await import('./socketLifecycle.characterization');
   const { runDiscordExecutionCharacterization } = await import('./discordExecution.characterization');
   const { runDiscordRegistrationCharacterization } = await import('./discordRegistration.characterization');
@@ -36,6 +39,10 @@ const loadSuites = async () => {
     {
       name: 'rest-overlay-pair-consume',
       run: runRestOverlayPairConsumeCharacterization,
+    },
+    {
+      name: 'admin-ingest-client-validation',
+      run: runAdminIngestClientValidationCharacterization,
     },
     {
       name: 'socket-lifecycle',

@@ -7,6 +7,7 @@ This runbook defines the pre-refactor safety loop introduced for `US-001`.
 `pnpm characterization` runs and verifies baselines for:
 - REST domain contracts: `/overlay/config`, `/ingest/pair/consume`, `/admin/api/runtime-settings`, and unsupported path behavior
 - REST contract: `POST /overlay/pair/consume` (valid + malformed payload)
+- Admin ingest client contract: `POST /admin/api/ingest-clients` (valid payload persistence + invalid author id rejection)
 - Socket lifecycle: overlay auth, connect/heartbeat/disconnect side effects, peers emission shape
 - Discord command execution flow: unknown command path and failing command recovery path
 - Discord command registration contract: command list and registration payload shape

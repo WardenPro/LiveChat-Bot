@@ -2,6 +2,7 @@ import { createPlaybackJob } from '../../services/playbackJobs';
 import { MediaAssetStatus } from '../../services/prisma/prismaEnums';
 import { MEME_JOB_PRIORITY } from '../../services/playbackScheduler';
 import { executeManualStopForGuild } from '../../services/manualStop';
+import { parseRequestField } from '../../services/validation/requestParsing';
 
 import type { OverlayConnectionState, OverlayPlaybackScheduler, OverlaySocket } from './types';
 import { normalizeOverlaySessionMode, toNonEmptyString } from './valueUtils';
@@ -47,7 +48,7 @@ export const createOverlaySocketEventDispatcher = ({
 }: CreateOverlaySocketEventDispatcherParams): OverlaySocketEventDispatcher => {
   const registerHandlers = (socket: OverlaySocket, guildId: string) => {
     socket.on(OVERLAY_SOCKET_EVENTS.HEARTBEAT, async (payload: OverlayHeartbeatPayload) => {
-      const sessionModeFromHeartbeat = toNonEmptyString(payload?.sessionMode);
+      const sessionModeFromHeartbeat = parseRequestField(payload, 'sessionMode', toNonEmptyString);
       if (sessionModeFromHeartbeat) {
         socket.data.overlaySessionMode = normalizeOverlaySessionMode(sessionModeFromHeartbeat);
       }
@@ -77,7 +78,9 @@ export const createOverlaySocketEventDispatcher = ({
     });
 
     socket.on(OVERLAY_SOCKET_EVENTS.PLAYBACK_STATE, async (payload: OverlayPlaybackStatePayload) => {
-      const playbackJobId = typeof payload?.jobId === 'string' && payload.jobId.trim() ? payload.jobId.trim() : null;
+      const playbackJobId = parseRequestField(payload, 'jobId', (value) => {
+        return toNonEmptyString(value) || null;
+      });
       const playbackState = resolvePlaybackState(payload?.state);
       const remainingMs = resolvePlaybackRemainingMs(payload?.remainingMs);
 
@@ -96,7 +99,9 @@ export const createOverlaySocketEventDispatcher = ({
     });
 
     socket.on(OVERLAY_SOCKET_EVENTS.STOP, async (payload: OverlayStopPayload) => {
-      const stopJobId = typeof payload?.jobId === 'string' && payload.jobId.trim() ? payload.jobId.trim() : 'unknown';
+      const stopJobId = parseRequestField(payload, 'jobId', (value) => {
+        return toNonEmptyString(value) || 'unknown';
+      });
 
       if (stopJobId === 'manual-stop') {
         await executeManualStopForGuild(fastify, guildId, {
@@ -115,7 +120,9 @@ export const createOverlaySocketEventDispatcher = ({
     });
 
     socket.on(OVERLAY_SOCKET_EVENTS.MEME_TRIGGER, async (payload: OverlayMemeTriggerPayload) => {
-      const rawItemId = typeof payload?.itemId === 'string' ? payload.itemId.trim() : '';
+      const rawItemId = parseRequestField(payload, 'itemId', (value) => {
+        return toNonEmptyString(value) || '';
+      });
       const triggerKind = payload?.trigger === 'ui' ? 'ui' : 'shortcut';
 
       if (!rawItemId) {

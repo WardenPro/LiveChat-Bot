@@ -20,6 +20,14 @@ import {
   extractTweetStatusIdFromUrl,
   resolveTweetVideoMediasFromUrl,
 } from '../../services/social/twitterVideoResolver';
+import {
+  parseBodyField,
+  parseBodyNonEmptyString,
+  parseBooleanFlag,
+  parseNonEmptyString,
+  parseOptionalBoolean,
+  parseOptionalDurationSec,
+} from '../../services/validation/requestParsing';
 
 interface IngestBody {
   guildId?: unknown;
@@ -61,54 +69,16 @@ const getTweetCardDurationSec = (
   return Math.max(1, Math.ceil(Math.max(...knownDurations)));
 };
 
-const toNonEmptyString = (value: unknown): string | null => {
-  if (typeof value !== 'string') {
-    return null;
-  }
-
-  const trimmed = value.trim();
-
-  return trimmed || null;
-};
-
-const toOptionalBoolean = (value: unknown): boolean | undefined => {
-  if (typeof value === 'boolean') {
-    return value;
-  }
-
-  return undefined;
-};
-
-const toBooleanFlag = (value: unknown): boolean => {
-  if (typeof value === 'boolean') {
-    return value;
-  }
-
-  if (typeof value === 'number') {
-    return value === 1;
-  }
-
-  if (typeof value === 'string') {
-    const normalized = value.trim().toLowerCase();
-    return normalized === '1' || normalized === 'true' || normalized === 'yes' || normalized === 'on';
-  }
-
-  return false;
-};
-
-const toOptionalDurationSec = (value: unknown): number | null => {
-  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
-    return null;
-  }
-
-  return Math.ceil(value);
-};
+const toNonEmptyString = parseNonEmptyString;
+const toOptionalBoolean = parseOptionalBoolean;
+const toBooleanFlag = parseBooleanFlag;
+const toOptionalDurationSec = parseOptionalDurationSec;
 
 export const IngestRoutes = () =>
   async function (fastify: FastifyCustomInstance) {
     fastify.post<{ Body: ConsumeIngestPairingBody }>('/pair/consume', async (request, reply) => {
-      const rawCode = toNonEmptyString(request.body?.code)?.toUpperCase() || null;
-      const requestedDeviceName = toNonEmptyString(request.body?.deviceName);
+      const rawCode = parseBodyNonEmptyString(request.body, 'code')?.toUpperCase() || null;
+      const requestedDeviceName = parseBodyNonEmptyString(request.body, 'deviceName');
       const codePrefix = rawCode ? rawCode.slice(0, 3) : null;
 
       logger.info(
@@ -254,16 +224,16 @@ export const IngestRoutes = () =>
         });
       }
 
-      const requestedGuildId = toNonEmptyString(request.body?.guildId);
-      const url = toNonEmptyString(request.body?.url);
-      const media = toNonEmptyString(request.body?.media);
-      const text = toNonEmptyString(request.body?.text);
-      const showText = toOptionalBoolean(request.body?.showText);
-      const forceRefresh = toBooleanFlag(request.body?.forceRefresh);
-      const saveToBoard = toBooleanFlag(request.body?.saveToBoard);
-      const authorName = toNonEmptyString(request.body?.authorName);
-      const authorImage = toNonEmptyString(request.body?.authorImage);
-      const durationSec = toOptionalDurationSec(request.body?.durationSec);
+      const requestedGuildId = parseBodyNonEmptyString(request.body, 'guildId');
+      const url = parseBodyNonEmptyString(request.body, 'url');
+      const media = parseBodyNonEmptyString(request.body, 'media');
+      const text = parseBodyNonEmptyString(request.body, 'text');
+      const showText = parseBodyField(request.body, 'showText', toOptionalBoolean);
+      const forceRefresh = parseBodyField(request.body, 'forceRefresh', toBooleanFlag);
+      const saveToBoard = parseBodyField(request.body, 'saveToBoard', toBooleanFlag);
+      const authorName = parseBodyNonEmptyString(request.body, 'authorName');
+      const authorImage = parseBodyNonEmptyString(request.body, 'authorImage');
+      const durationSec = parseBodyField(request.body, 'durationSec', toOptionalDurationSec);
       const mediaStartOffsetSec = extractMediaStartOffsetSec({ url, media });
 
       if (requestedGuildId && requestedGuildId !== authResult.client.guildId) {
@@ -301,7 +271,8 @@ export const IngestRoutes = () =>
       });
       let jobShowText = showText ?? !!text;
       let hasRichTweetCardPayload = false;
-      let jobAuthorName: string | null = toNonEmptyString(authResult.client.defaultAuthorName) || DEFAULT_INGEST_AUTHOR_NAME;
+      let jobAuthorName: string | null =
+        toNonEmptyString(authResult.client.defaultAuthorName) || DEFAULT_INGEST_AUTHOR_NAME;
       let jobAuthorImage = toNonEmptyString(authResult.client.defaultAuthorImage);
       let jobDurationSec = durationSec;
       const normalizedTweetUrl = !saveToBoard && !media && url ? normalizeTweetStatusUrl(url) : null;

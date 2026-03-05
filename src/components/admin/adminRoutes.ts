@@ -5,6 +5,12 @@ import { createIngestClientToken } from '../../services/ingestAuth';
 import { executeManualStopForGuild } from '../../services/manualStop';
 import { MediaAssetStatus, PlaybackJobStatus } from '../../services/prisma/prismaEnums';
 import { getRuntimeTikTokCookie, persistRuntimeTikTokCookieToEnvFile } from '../../services/runtimeSettings';
+import {
+  parseBodyNonEmptyString,
+  parseNonEmptyString,
+  parseParamNonEmptyString,
+  parseQueryNonEmptyString,
+} from '../../services/validation/requestParsing';
 
 const BYTES_PER_MEGABYTE = 1024 * 1024;
 
@@ -108,14 +114,7 @@ interface GroupedPlaybackCount {
   };
 }
 
-const toNonEmptyString = (value: unknown): string | null => {
-  if (typeof value !== 'string') {
-    return null;
-  }
-
-  const normalized = value.trim();
-  return normalized.length > 0 ? normalized : null;
-};
+const toNonEmptyString = parseNonEmptyString;
 
 const normalizeOverlaySessionMode = (value: unknown): OverlaySessionMode => {
   if (typeof value === 'string' && value.trim().toLowerCase() === 'invite_read_only') {
@@ -221,7 +220,7 @@ const safeTokenEquals = (expected: string, candidate: string): boolean => {
 
 const getRequestToken = (request: FastifyRequest): string | null => {
   const authHeader = request.headers.authorization;
-  const queryToken = toNonEmptyString((request.query as Record<string, unknown> | undefined)?.token);
+  const queryToken = parseQueryNonEmptyString(request.query, 'token');
 
   if (authHeader) {
     const [scheme, token] = authHeader.split(' ');
@@ -335,7 +334,9 @@ const listKnownIngestAuthors = async (): Promise<KnownIngestAuthor[]> => {
       orderBy: {
         createdAt: 'desc',
       },
-    }) as Promise<Array<{ createdByDiscordUserId: string; authorName: string | null; authorImage: string | null; createdAt: Date }>>,
+    }) as Promise<
+      Array<{ createdByDiscordUserId: string; authorName: string | null; authorImage: string | null; createdAt: Date }>
+    >,
     delegate
       ? (delegate.findMany({
           select: {
@@ -431,19 +432,18 @@ const listKnownIngestAuthors = async (): Promise<KnownIngestAuthor[]> => {
     });
   });
 
-  return Array.from(byDiscordUserId.values())
-    .sort((left, right) => {
-      const byName = left.displayName.localeCompare(right.displayName, undefined, {
-        sensitivity: 'base',
-      });
-      if (byName !== 0) {
-        return byName;
-      }
-
-      return left.discordUserId.localeCompare(right.discordUserId, undefined, {
-        sensitivity: 'base',
-      });
+  return Array.from(byDiscordUserId.values()).sort((left, right) => {
+    const byName = left.displayName.localeCompare(right.displayName, undefined, {
+      sensitivity: 'base',
     });
+    if (byName !== 0) {
+      return byName;
+    }
+
+    return left.discordUserId.localeCompare(right.discordUserId, undefined, {
+      sensitivity: 'base',
+    });
+  });
 };
 
 const revokeIngestClient = async (clientId: string) => {
@@ -567,8 +567,12 @@ const listGuildReferencedMediaAssetIds = async (guildId: string): Promise<string
   return Array.from(mediaAssetIds.values());
 };
 
-const purgeOrphanMediaAssets = async (mediaAssetIds: string[]): Promise<{ deletedCount: number; fileDeleteErrors: number }> => {
-  const normalizedIds = Array.from(new Set(mediaAssetIds.map((id) => toNonEmptyString(id)).filter((id): id is string => !!id)));
+const purgeOrphanMediaAssets = async (
+  mediaAssetIds: string[],
+): Promise<{ deletedCount: number; fileDeleteErrors: number }> => {
+  const normalizedIds = Array.from(
+    new Set(mediaAssetIds.map((id) => toNonEmptyString(id)).filter((id): id is string => !!id)),
+  );
 
   if (normalizedIds.length === 0) {
     return {
@@ -2465,7 +2469,9 @@ export const AdminRoutes = () =>
       ]);
 
       const guildNameMap = new Map<string, string | null>(discordNamePairs);
-      const guildRecordMap = new Map<string, GuildRecord>(guildRecords.map((guildRecord) => [guildRecord.id, guildRecord]));
+      const guildRecordMap = new Map<string, GuildRecord>(
+        guildRecords.map((guildRecord) => [guildRecord.id, guildRecord]),
+      );
 
       const overlaysByGuild = new Map<string, OverlayClientRecord[]>();
       for (const overlayClient of overlayClients) {
@@ -2687,9 +2693,9 @@ export const AdminRoutes = () =>
         return;
       }
 
-      const guildId = toNonEmptyString(request.body?.guildId);
-      const authorDiscordUserId = toNonEmptyString(request.body?.authorDiscordUserId);
-      const label = toNonEmptyString(request.body?.label);
+      const guildId = parseBodyNonEmptyString(request.body, 'guildId');
+      const authorDiscordUserId = parseBodyNonEmptyString(request.body, 'authorDiscordUserId');
+      const label = parseBodyNonEmptyString(request.body, 'label');
 
       if (!guildId) {
         return reply.code(400).send({
@@ -2832,9 +2838,11 @@ export const AdminRoutes = () =>
           });
         }
 
-        if ((request.body?.defaultMediaTime !== undefined && defaultMediaTime === undefined) ||
-            (request.body?.maxMediaTime !== undefined && maxMediaTime === undefined) ||
-            (request.body?.displayMediaFull !== undefined && displayMediaFull === undefined)) {
+        if (
+          (request.body?.defaultMediaTime !== undefined && defaultMediaTime === undefined) ||
+          (request.body?.maxMediaTime !== undefined && maxMediaTime === undefined) ||
+          (request.body?.displayMediaFull !== undefined && displayMediaFull === undefined)
+        ) {
           return reply.code(400).send({
             error: 'invalid_payload',
           });
@@ -2955,33 +2963,34 @@ export const AdminRoutes = () =>
           }
         }
 
-        const [overlayDeleteResult, pairingDeleteResult, playbackDeleteResult, boardDeleteResult, guildDeleteResult] = await Promise.all([
-          prisma.overlayClient.deleteMany({
-            where: {
-              guildId,
-            },
-          }),
-          prisma.pairingCode.deleteMany({
-            where: {
-              guildId,
-            },
-          }),
-          prisma.playbackJob.deleteMany({
-            where: {
-              guildId,
-            },
-          }),
-          prisma.memeBoardItem.deleteMany({
-            where: {
-              guildId,
-            },
-          }),
-          prisma.guild.deleteMany({
-            where: {
-              id: guildId,
-            },
-          }),
-        ]);
+        const [overlayDeleteResult, pairingDeleteResult, playbackDeleteResult, boardDeleteResult, guildDeleteResult] =
+          await Promise.all([
+            prisma.overlayClient.deleteMany({
+              where: {
+                guildId,
+              },
+            }),
+            prisma.pairingCode.deleteMany({
+              where: {
+                guildId,
+              },
+            }),
+            prisma.playbackJob.deleteMany({
+              where: {
+                guildId,
+              },
+            }),
+            prisma.memeBoardItem.deleteMany({
+              where: {
+                guildId,
+              },
+            }),
+            prisma.guild.deleteMany({
+              where: {
+                id: guildId,
+              },
+            }),
+          ]);
         const orphanMediaResult = removeOrphanMedia
           ? await purgeOrphanMediaAssets(candidateMediaAssetIds)
           : {
@@ -3015,7 +3024,7 @@ export const AdminRoutes = () =>
         return;
       }
 
-      const clientId = toNonEmptyString(request.params.clientId);
+      const clientId = parseParamNonEmptyString(request.params, 'clientId');
       if (!clientId) {
         return reply.code(400).send({
           error: 'invalid_client_id',
@@ -3064,7 +3073,7 @@ export const AdminRoutes = () =>
         return;
       }
 
-      const clientId = toNonEmptyString(request.params.clientId);
+      const clientId = parseParamNonEmptyString(request.params, 'clientId');
       if (!clientId) {
         return reply.code(400).send({
           error: 'invalid_client_id',
@@ -3093,8 +3102,8 @@ export const AdminRoutes = () =>
         return;
       }
 
-      const guildId = toNonEmptyString(request.query?.guildId);
-      const status = toNonEmptyString(request.query?.status) || 'all';
+      const guildId = parseQueryNonEmptyString(request.query, 'guildId');
+      const status = parseQueryNonEmptyString(request.query, 'status') || 'all';
       const now = new Date();
 
       const records = (await prisma.pairingCode.findMany({
@@ -3153,7 +3162,7 @@ export const AdminRoutes = () =>
         return;
       }
 
-      const guildId = toNonEmptyString(request.query?.guildId);
+      const guildId = parseQueryNonEmptyString(request.query, 'guildId');
 
       const deleteResult = await prisma.pairingCode.deleteMany({
         where: {
@@ -3188,7 +3197,7 @@ export const AdminRoutes = () =>
         return;
       }
 
-      const code = toNonEmptyString(request.params.code)?.toUpperCase();
+      const code = parseParamNonEmptyString(request.params, 'code')?.toUpperCase();
       if (!code) {
         return reply.code(400).send({
           error: 'invalid_code',
