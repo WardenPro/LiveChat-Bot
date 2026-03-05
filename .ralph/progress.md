@@ -902,3 +902,43 @@ Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/ru
   - Useful context
     - Matrix gate now marks all US-007 target modules as covered while remaining failures map to future Discord/message/shared-service stories.
 ---
+## [2026-03-05 15:23:37 CET] - US-008: Backfill tests for Discord loader internals
+Thread: 
+Run: 20260305-135706-86234 (iteration 8)
+Run log: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-135706-86234-iter-8.log
+Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-135706-86234-iter-8.md
+- Guardrails reviewed: yes
+- No-commit run: false
+- Commit: db55ed6 test(discord-loader): backfill loader internals
+- Post-commit status: clean
+- Verification:
+  - Command: pnpm lint -> PASS
+  - Command: pnpm build -> PASS
+  - Command: pnpm characterization -> PASS
+  - Command: pnpm test:unit -> PASS
+  - Command: pnpm test:unit:matrix -> FAIL (expected at this stage; uncovered modules remain outside US-008 scope while Discord loader internals are now covered)
+  - Command: API_URL='http://localhost:3000' DISCORD_TOKEN='test-token' DISCORD_CLIENT_ID='test-client' DATABASE_URL='file:./sqlite.db' pnpm dev (bounded smoke) -> PASS (`__SMOKE_OK__`; startup reached bootstrap, Discord auth/command registration failures expected with placeholder credentials)
+- Files changed:
+  - .agents/tasks/prd-module-unit-tests.json
+  - .ralph/.tmp/prompt-20260305-135706-86234-8.md
+  - .ralph/.tmp/story-20260305-135706-86234-8.json
+  - .ralph/.tmp/story-20260305-135706-86234-8.md
+  - .ralph/runs/run-20260305-135706-86234-iter-7.md
+  - tests/unit/loaders/DiscordLoader.test.ts
+  - tests/unit/loaders/discord/commandMetadata.test.ts
+  - tests/unit/loaders/discord/commandRegistry.test.ts
+  - tests/unit/loaders/discord/interactionExecution.test.ts
+  - tests/unit/loaders/discord/types.test.ts
+  - .ralph/progress.md
+- What was implemented
+  - Added unit tests for `src/loaders/DiscordLoader.ts` covering Discord REST/client initialization, command metadata registration path, event listener wiring, and non-crashing error handling for registration/login failures.
+  - Added unit tests for `src/loaders/discord/commandMetadata.ts`, `commandRegistry.ts`, `interactionExecution.ts`, and `types.ts` with mocked Discord/client interactions and explicit positive/negative-path assertions.
+  - Verified the matrix gate now marks all Discord loader internal modules (`src/loaders/DiscordLoader.ts` and `src/loaders/discord/*`) as covered.
+- **Learnings for future iterations:**
+  - Patterns discovered
+    - Hoisted Vitest module mocks are sufficient to isolate Discord.js constructors and keep loader tests deterministic without real API calls.
+  - Gotchas encountered
+    - `pnpm test:unit:matrix` remains globally failing until later PRD stories backfill remaining runtime modules; story-level completion should be evaluated against scoped module coverage in `coveredModules`.
+  - Useful context
+    - A bounded `pnpm dev` smoke can validate runtime bootstrap (`[BOOT] Server bootstrap completed`) even when placeholder Discord credentials intentionally fail authentication.
+---
