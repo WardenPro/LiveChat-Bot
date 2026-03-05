@@ -440,3 +440,45 @@ Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/ru
   - Useful context
   - Characterization suites should avoid fixed timestamps near current dates to prevent time-based flakiness.
 ---
+## [2026-03-05 13:10:20 CET] - US-011: Perform dependency hygiene with patch-only updates
+Thread: 
+Run: 20260305-090958-5834 (iteration 11)
+Run log: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-090958-5834-iter-11.log
+Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-090958-5834-iter-11.md
+- Guardrails reviewed: yes
+- No-commit run: false
+- Commit: 6f8183e chore(deps): apply patch-only dependency hygiene (or `none` + reason)
+- Post-commit status: `clean`
+- Verification:
+  - Command: pnpm characterization -> PASS
+  - Command: pnpm lint -> PASS
+  - Command: pnpm build -> PASS
+  - Command: pnpm audit --prod --audit-level=moderate -> PASS
+  - Command: API_URL='http://localhost:3333' DISCORD_TOKEN='dev-smoke-token' DISCORD_CLIENT_ID='dev-smoke-client' DATABASE_URL='file:./sqlite.db' LOG='silent' pnpm dev (bounded smoke) -> PASS (started, migrations applied, terminated intentionally after startup window)
+- Files changed:
+  - .agents/tasks/prd-livechat-refactor.json
+  - package.json
+  - pnpm-lock.yaml
+  - pnpm-workspace.yaml
+  - src/architecture/dependency-hygiene.md
+  - .ralph/.tmp/prompt-20260305-090958-5834-11.md
+  - .ralph/.tmp/story-20260305-090958-5834-11.json
+  - .ralph/.tmp/story-20260305-090958-5834-11.md
+  - .ralph/characterization/latest/env-parsing.latest.json
+  - .ralph/characterization/latest/overlay-auth.latest.json
+  - .ralph/runs/run-20260305-090958-5834-iter-10.md
+- What was implemented
+  - Audited direct dependencies for patch/minor/major candidates, unused packages, and transitive duplication/security risks.
+  - Applied patch-only upgrades to pinned dev dependencies: `@commitlint/config-conventional` (18.6.2 -> 18.6.3), `@types/node` (20.11.17 -> 20.11.30), `@typescript-eslint/eslint-plugin` (7.0.1 -> 7.0.2), `@typescript-eslint/parser` (7.0.1 -> 7.0.2), and `eslint-config-prettier` (9.1.0 -> 9.1.2).
+  - Removed unused direct dependency `@t3-oss/env-core`.
+  - Added local `pnpm-workspace.yaml` so repository-level `pnpm.overrides` are applied consistently; lock refresh yields `undici@6.23.0` and `minimatch@10.2.2` in the resolved tree.
+  - Added `src/architecture/dependency-hygiene.md` with before/after versions, release-note references, deferred out-of-scope minor/major updates, and rollback notes.
+- **Learnings for future iterations:**
+  - Patterns discovered
+    - In nested parent workspaces, local dependency hygiene checks can misreport until the repo is explicitly rooted as its own pnpm workspace.
+  - Gotchas encountered
+    - `pnpm lint` (`--fix`) auto-edits unrelated files; restore non-story formatting changes before commit.
+    - `pnpm dlx depcheck` returns false positives for config-driven dependencies and exits non-zero when parsing commented tsconfig JSON.
+  - Useful context
+    - Local `pnpm-workspace.yaml` ensures the repo’s `pnpm.overrides` (notably `undici`/`minimatch`) are effective for audit and install flows.
+---
