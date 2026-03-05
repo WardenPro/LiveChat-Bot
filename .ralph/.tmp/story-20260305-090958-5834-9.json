@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "total": 14,
+  "remaining": 6,
+  "quality_gates": [
+    "pnpm lint",
+    "pnpm build"
+  ],
+  "id": "US-009",
+  "title": "Tighten TypeScript compiler policy with tracked exceptions"
+}

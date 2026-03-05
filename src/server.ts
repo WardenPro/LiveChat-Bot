@@ -51,7 +51,9 @@ const loggerRedactionPaths = [
 export const runServer = async () => {
   const logLevel = env.LOG || 'info';
   // LOAD API FRAMEWORK
-  //@ts-ignore
+  // TODO(@livechat-maintainers, LC-TS-009): Remove the custom instance cast once
+  // Fastify plugin decoration types are fully modeled in runtime wiring.
+  // @ts-expect-error Fastify generic inference does not include our runtime decorations.
   const fastify: FastifyCustomInstance = Fastify({
     logger: {
       level: logLevel,

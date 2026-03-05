@@ -24,6 +24,14 @@ const toSafeNumber = (value: unknown, fallbackValue: number) => {
   return value;
 };
 
+const toNullableFiniteNumber = (value: unknown): number | null => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return null;
+  }
+
+  return value;
+};
+
 const resolveLoudnormTargets = () => {
   const integratedLoudness = toSafeNumber(env.MEDIA_AUDIO_LOUDNORM_I, -16);
   const loudnessRange = toSafeNumber(env.MEDIA_AUDIO_LOUDNORM_LRA, 11);
@@ -52,6 +60,24 @@ interface ProbedMediaDetails extends ProbedMetadata {
   videoCodec: string | null;
   audioCodec: string | null;
   pixelFormat: string | null;
+}
+
+interface ProbedStream {
+  codec_type?: unknown;
+  codec_name?: unknown;
+  width?: unknown;
+  height?: unknown;
+  pix_fmt?: unknown;
+}
+
+interface ProbedFormat {
+  duration?: unknown;
+  format_name?: unknown;
+}
+
+interface ProbedPayload {
+  streams?: unknown;
+  format?: ProbedFormat;
 }
 
 export interface NormalizedMedia {
@@ -191,16 +217,16 @@ const probeMediaDetails = async (filePath: string): Promise<ProbedMediaDetails> 
     },
   );
 
-  const parsed = JSON.parse(stdout || '{}');
-  const streams = Array.isArray(parsed.streams) ? parsed.streams : [];
+  const parsed = JSON.parse(stdout || '{}') as ProbedPayload;
+  const streams = Array.isArray(parsed.streams) ? (parsed.streams as ProbedStream[]) : [];
   const firstVideo = streams.find(
-    (stream) =>
+    (stream: ProbedStream) =>
       stream?.codec_type === 'video' || (typeof stream?.width === 'number' && typeof stream?.height === 'number'),
   );
-  const firstAudio = streams.find((stream) => stream?.codec_type === 'audio');
+  const firstAudio = streams.find((stream: ProbedStream) => stream?.codec_type === 'audio');
 
-  const width = firstVideo?.width ?? null;
-  const height = firstVideo?.height ?? null;
+  const width = toNullableFiniteNumber(firstVideo?.width);
+  const height = toNullableFiniteNumber(firstVideo?.height);
 
   let durationSec: number | null = null;
 

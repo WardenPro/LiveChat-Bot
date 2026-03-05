@@ -174,9 +174,9 @@ const toStructuredError = (error: unknown) => {
 export class OperationalError extends Error {
   public readonly category: Exclude<ErrorCategory, 'unexpected'>;
   public readonly code: string;
-  public readonly statusCode?: number;
-  public readonly socketCode?: SocketAuthErrorCode;
-  public readonly context?: Record<string, unknown>;
+  public readonly statusCode: number | undefined;
+  public readonly socketCode: SocketAuthErrorCode | undefined;
+  public readonly context: Record<string, unknown> | undefined;
 
   constructor(options: OperationalErrorOptions) {
     super(options.message);
@@ -268,14 +268,19 @@ export const createSocketAuthOperationalError = (
 ) => {
   const message = code === 'missing_token' ? 'overlay_socket_missing_token' : 'overlay_socket_invalid_token';
 
-  return new OperationalError({
+  const options: OperationalErrorOptions = {
     category: 'authentication',
     code,
     message,
     statusCode: 401,
     socketCode: code,
-    context,
-  });
+  };
+
+  if (context) {
+    options.context = context;
+  }
+
+  return new OperationalError(options);
 };
 
 export const mapErrorToSocketAuthOutput = (

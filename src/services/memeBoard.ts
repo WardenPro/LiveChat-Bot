@@ -82,7 +82,11 @@ const getGuildBoardTotalSizeBytes = async (guildId: string): Promise<number> => 
     },
   });
 
-  return items.reduce((accumulator, item) => accumulator + toSafeSizeBytes(item.mediaAsset.sizeBytes), 0);
+  return items.reduce(
+    (accumulator: number, item: { mediaAsset: { sizeBytes: unknown } }) =>
+      accumulator + toSafeSizeBytes(item.mediaAsset.sizeBytes),
+    0,
+  );
 };
 
 const ensureGuildBoardHasCapacity = async (guildId: string, mediaAssetId: string) => {

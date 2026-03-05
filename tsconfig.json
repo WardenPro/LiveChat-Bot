@@ -5,7 +5,7 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "target": "ES6",
-    "noImplicitAny": false,
+    "noImplicitAny": true,
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "removeComments": true,
@@ -23,4 +23,3 @@
   },
   "include": ["src/**/*", "src/types/module.d.ts"],
 }
-

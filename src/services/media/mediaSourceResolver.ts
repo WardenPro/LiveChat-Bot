@@ -174,7 +174,9 @@ const resolveShortTikTokUrl = async (rawSource: string): Promise<string> => {
       const headResponse = await resolveUrlWithTimeout(rawSource, 'HEAD');
       if (headResponse.url) {
         try {
-          // @ts-ignore Node stream compatibility
+          // TODO(@livechat-maintainers, LC-TS-009): Replace destroy compatibility
+          // call with a typed stream cleanup helper shared with fetch wrappers.
+          // @ts-expect-error Response body may be a Node stream at runtime.
           headResponse.body?.destroy?.();
         } catch {
           // ignore cleanup failure
@@ -188,7 +190,9 @@ const resolveShortTikTokUrl = async (rawSource: string): Promise<string> => {
     const getResponse = await resolveUrlWithTimeout(rawSource, 'GET');
     const resolved = getResponse.url || rawSource;
     try {
-      // @ts-ignore Node stream compatibility
+      // TODO(@livechat-maintainers, LC-TS-009): Replace destroy compatibility
+      // call with a typed stream cleanup helper shared with fetch wrappers.
+      // @ts-expect-error Response body may be a Node stream at runtime.
       getResponse.body?.destroy?.();
     } catch {
       // ignore cleanup failure

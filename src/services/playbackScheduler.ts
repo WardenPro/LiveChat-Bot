@@ -1,7 +1,7 @@
 import { addMilliseconds } from 'date-fns';
-import { OVERLAY_SOCKET_EVENTS, type OverlayPlayPayload } from '@livechat/overlay-protocol';
 import { decodeRichOverlayPayload } from './messages/richOverlayPayload';
 import { MediaAssetStatus, PlaybackJobStatus } from './prisma/prismaEnums';
+import { OVERLAY_SOCKET_EVENTS, type OverlayPlayPayload } from '@livechat/overlay-protocol';
 
 const PLAYBACK_LOCK_PADDING_MS = 250;
 const PLAYBACK_STALE_RELEASE_GRACE_MS = 10_000;
@@ -18,6 +18,25 @@ interface RunGuildOptions {
 }
 
 type DispatchOutcome = 'dispatched' | 'retry' | 'idle';
+
+interface ActivePlaybackJobRecord {
+  id: string;
+  durationSec: number | null;
+  startedAt: Date | string | null;
+  remainingMsSnapshot: number | null;
+  lastPlaybackStateAt: Date | string | null;
+  resumeOffsetSec: number | null;
+}
+
+interface PendingPlaybackJobRecord extends ActivePlaybackJobRecord {
+  mediaAssetId: string | null;
+  text: string | null;
+  showText: boolean | null;
+  authorName: string | null;
+  authorImage: string | null;
+  priority: number;
+  submissionDate: Date | string;
+}
 
 const toNonEmptyString = (value: unknown): string | null => {
   if (typeof value !== 'string') {
@@ -45,7 +64,9 @@ const toPlaybackDurationSec = (value: unknown): number => {
   return Math.max(1, Math.floor(value));
 };
 
-const getMediaStartOffsetSecFromRichPayload = (richPayload: ReturnType<typeof decodeRichOverlayPayload>): number | null => {
+const getMediaStartOffsetSecFromRichPayload = (
+  richPayload: ReturnType<typeof decodeRichOverlayPayload>,
+): number | null => {
   if (!richPayload || richPayload.type !== 'media') {
     return null;
   }
@@ -147,8 +168,8 @@ class PlaybackScheduler {
     const uniqueGuildIds = Array.from(
       new Set(
         activeJobs
-          .map((job) => `${job.guildId || ''}`.trim())
-          .filter((guildId): guildId is string => guildId.length > 0),
+          .map((job: { guildId?: string | null }) => `${job.guildId || ''}`.trim())
+          .filter((guildId: string) => guildId.length > 0),
       ),
     ) as string[];
 
@@ -244,10 +265,7 @@ class PlaybackScheduler {
     });
   }
 
-  public async onPlaybackStopped(params: {
-    guildId: string;
-    jobId?: string | null;
-  }) {
+  public async onPlaybackStopped(params: { guildId: string; jobId?: string | null }) {
     const normalizedGuildId = toNonEmptyString(params.guildId);
 
     if (!normalizedGuildId) {
@@ -299,10 +317,7 @@ class PlaybackScheduler {
     });
   }
 
-  public async onPlaybackEnded(params: {
-    guildId: string;
-    jobId?: string | null;
-  }) {
+  public async onPlaybackEnded(params: { guildId: string; jobId?: string | null }) {
     const normalizedGuildId = toNonEmptyString(params.guildId);
 
     if (!normalizedGuildId) {
@@ -353,10 +368,7 @@ class PlaybackScheduler {
     });
   }
 
-  public async preemptWithJob(params: {
-    guildId: string;
-    preemptingJobId: string;
-  }) {
+  public async preemptWithJob(params: { guildId: string; preemptingJobId: string }) {
     const normalizedGuildId = toNonEmptyString(params.guildId);
     const normalizedPreemptingJobId = toNonEmptyString(params.preemptingJobId);
 
@@ -453,7 +465,10 @@ class PlaybackScheduler {
           startedAt: activePlayingJob.startedAt,
           durationSec: toPlaybackDurationSec(activePlayingJob.durationSec),
         });
-        await this.recomputeRootPendingExecutionDates(guildId, this.getExpectedJobEndAtMs(activePlayingJob, now.getTime()));
+        await this.recomputeRootPendingExecutionDates(
+          guildId,
+          this.getExpectedJobEndAtMs(activePlayingJob, now.getTime()),
+        );
         return;
       }
 
@@ -606,7 +621,11 @@ class PlaybackScheduler {
     this.wakeTimers.delete(guildId);
   }
 
-  private async releaseStalePlayingJob(guildId: string, activePlayingJob, now: Date): Promise<string | null> {
+  private async releaseStalePlayingJob(
+    guildId: string,
+    activePlayingJob: ActivePlaybackJobRecord,
+    now: Date,
+  ): Promise<string | null> {
     const expectedEndAtMs = this.getExpectedJobEndAtMs(activePlayingJob, now.getTime());
     const shouldRelease = now.getTime() >= expectedEndAtMs + PLAYBACK_STALE_RELEASE_GRACE_MS;
 
@@ -635,10 +654,13 @@ class PlaybackScheduler {
 
     await this.clearGuildBusyLock(guildId);
 
+    const startedAtLabel =
+      activePlayingJob.startedAt instanceof Date
+        ? activePlayingJob.startedAt.toISOString()
+        : toNonEmptyString(activePlayingJob.startedAt) || 'unknown';
+
     logger.warn(
-      `[PLAYBACK] Auto-released stale PLAYING job ${activePlayingJob.id} (guild: ${guildId}, durationSec: ${
-        activePlayingJob.durationSec
-      }, startedAt: ${activePlayingJob.startedAt?.toISOString() || 'unknown'})`,
+      `[PLAYBACK] Auto-released stale PLAYING job ${activePlayingJob.id} (guild: ${guildId}, durationSec: ${activePlayingJob.durationSec}, startedAt: ${startedAtLabel})`,
     );
 
     return `${activePlayingJob.id}`;
@@ -773,7 +795,10 @@ class PlaybackScheduler {
         },
       });
 
-      if (!parentJob || (parentJob.status !== PlaybackJobStatus.PENDING && parentJob.status !== PlaybackJobStatus.PLAYING)) {
+      if (
+        !parentJob ||
+        (parentJob.status !== PlaybackJobStatus.PENDING && parentJob.status !== PlaybackJobStatus.PLAYING)
+      ) {
         return prisma.playbackJob.findFirst({
           where: {
             id: pendingResumedJob.id,
@@ -788,7 +813,7 @@ class PlaybackScheduler {
     return null;
   }
 
-  private async dispatchPendingJob(guildId: string, nextJob): Promise<DispatchOutcome> {
+  private async dispatchPendingJob(guildId: string, nextJob: PendingPlaybackJobRecord): Promise<DispatchOutcome> {
     const now = new Date();
 
     let mediaAsset: {
@@ -923,13 +948,16 @@ class PlaybackScheduler {
       startedAt,
       durationSec: effectiveDurationSec,
     });
-    await this.recomputeRootPendingExecutionDates(guildId, startedAt.getTime() + effectiveDurationSec * 1000 + PLAYBACK_LOCK_PADDING_MS);
+    await this.recomputeRootPendingExecutionDates(
+      guildId,
+      startedAt.getTime() + effectiveDurationSec * 1000 + PLAYBACK_LOCK_PADDING_MS,
+    );
     return 'dispatched';
   }
 
   private async suspendPlayingJobForPreemption(params: {
     guildId: string;
-    activePlayingJob;
+    activePlayingJob: ActivePlaybackJobRecord;
     preemptingJobId: string;
   }): Promise<string | null> {
     const { guildId, activePlayingJob, preemptingJobId } = params;
@@ -1004,13 +1032,14 @@ class PlaybackScheduler {
     return null;
   }
 
-  private estimateRemainingMs(activePlayingJob, nowMs: number): number {
+  private estimateRemainingMs(activePlayingJob: ActivePlaybackJobRecord, nowMs: number): number {
     const snapshotMs = toOptionalPositiveInt(activePlayingJob.remainingMsSnapshot);
+    const snapshotAtValue = toNonEmptyString(activePlayingJob.lastPlaybackStateAt);
     const snapshotAtMs =
       activePlayingJob.lastPlaybackStateAt instanceof Date
         ? activePlayingJob.lastPlaybackStateAt.getTime()
-        : toNonEmptyString(activePlayingJob.lastPlaybackStateAt)
-          ? new Date(activePlayingJob.lastPlaybackStateAt).getTime()
+        : snapshotAtValue
+          ? new Date(snapshotAtValue).getTime()
           : null;
 
     if (snapshotMs !== null && snapshotAtMs !== null && Number.isFinite(snapshotAtMs)) {
@@ -1021,11 +1050,12 @@ class PlaybackScheduler {
       }
     }
 
+    const startedAtValue = toNonEmptyString(activePlayingJob.startedAt);
     const startedAtMs =
       activePlayingJob.startedAt instanceof Date
         ? activePlayingJob.startedAt.getTime()
-        : toNonEmptyString(activePlayingJob.startedAt)
-          ? new Date(activePlayingJob.startedAt).getTime()
+        : startedAtValue
+          ? new Date(startedAtValue).getTime()
           : null;
 
     if (startedAtMs !== null && Number.isFinite(startedAtMs)) {
@@ -1049,12 +1079,13 @@ class PlaybackScheduler {
     });
   }
 
-  private getExpectedJobEndAtMs(activePlayingJob, fallbackNowMs: number) {
+  private getExpectedJobEndAtMs(activePlayingJob: ActivePlaybackJobRecord, fallbackNowMs: number) {
+    const startedAtValue = toNonEmptyString(activePlayingJob.startedAt);
     const startedAtMs =
       activePlayingJob.startedAt instanceof Date
         ? activePlayingJob.startedAt.getTime()
-        : toNonEmptyString(activePlayingJob.startedAt)
-          ? new Date(activePlayingJob.startedAt).getTime()
+        : startedAtValue
+          ? new Date(startedAtValue).getTime()
           : fallbackNowMs;
 
     return startedAtMs + toPlaybackDurationSec(activePlayingJob.durationSec) * 1000 + PLAYBACK_LOCK_PADDING_MS;

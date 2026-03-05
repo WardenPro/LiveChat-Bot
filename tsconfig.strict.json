@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "noPropertyAccessFromIndexSignature": true
+  },
+  "include": [
+    "src/services/env.ts",
+    "src/services/env/**/*.ts",
+    "src/services/errors/**/*.ts",
+    "src/services/validation/**/*.ts",
+    "src/types/strictness-exceptions.d.ts"
+  ]
+}

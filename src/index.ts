@@ -37,7 +37,9 @@ const bootstrap = async () => {
   const { env } = await import('./services/env');
 
   global.env = env;
-  //@ts-ignore
+  // TODO(@livechat-maintainers, LC-TS-009): Replace global env reassignment with
+  // a typed bootstrap config container and remove this compatibility exception.
+  // @ts-expect-error env schema includes non-string values by design.
   process.env = env;
 
   const port: number = env.PORT ? env.PORT : 3000;
