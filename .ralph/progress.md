@@ -859,3 +859,46 @@ Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/ru
   - Useful context
   - `pnpm test:unit:matrix` missing count dropped from 54 to 48 with six socket module entries added to `coveredModules`.
 ---
+## [2026-03-05 15:12 CET] - US-007: Backfill tests for REST loader and route domains
+Thread: 
+Run: 20260305-135706-86234 (iteration 7)
+Run log: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-135706-86234-iter-7.log
+Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-135706-86234-iter-7.md
+- Guardrails reviewed: yes
+- No-commit run: false
+- Commit: d9b53fe test(rest): backfill route loader domain tests
+- Post-commit status: `clean`
+- Verification:
+  - Command: pnpm lint -> PASS
+  - Command: pnpm build -> PASS
+  - Command: pnpm characterization -> PASS
+  - Command: pnpm test:unit -> PASS
+  - Command: pnpm test:unit:matrix -> FAIL (expected; uncovered modules remain outside US-007 scope)
+- Files changed:
+  - .agents/tasks/prd-module-unit-tests.json
+  - .ralph/.tmp/prompt-20260305-135706-86234-7.md
+  - .ralph/.tmp/story-20260305-135706-86234-7.json
+  - .ralph/.tmp/story-20260305-135706-86234-7.md
+  - .ralph/runs/run-20260305-135706-86234-iter-6.md
+  - tests/unit/loaders/RESTLoader.test.ts
+  - tests/unit/loaders/rest/registerDomainRoutes.test.ts
+  - tests/unit/loaders/rest/adminDomainRegistrar.test.ts
+  - tests/unit/loaders/rest/overlayDomainRegistrar.test.ts
+  - tests/unit/loaders/rest/ingestDomainRegistrar.test.ts
+  - tests/unit/components/overlay/overlayRoutes.test.ts
+  - tests/unit/components/admin/adminRoutes.test.ts
+  - tests/unit/components/ingest/ingestRoutes.test.ts
+- What was implemented
+  - Added unit tests for `src/loaders/RESTLoader.ts` to assert admin/overlay/ingest registrar wiring and legacy alias compatibility.
+  - Added unit tests for `src/loaders/rest/registerDomainRoutes.ts` and each domain registrar to validate prefix/factory registration behavior.
+  - Added Fastify injection tests for `src/components/overlay/overlayRoutes.ts`, including valid `POST /overlay/pair/consume` payload contract, malformed consume payload `400` response shape, and protected `/overlay/config` auth valid/invalid cases.
+  - Added Fastify injection tests for `src/components/admin/adminRoutes.ts` auth guard behavior on `GET /admin/` for invalid and valid credentials.
+  - Added Fastify injection tests for `src/components/ingest/ingestRoutes.ts`, covering valid `POST /ingest/pair/consume` payload contract and protected `/ingest/` auth invalid/valid credential branches.
+- **Learnings for future iterations:**
+  - Patterns discovered
+    - Route-domain backfills are stable with Fastify injection plus focused service mocks on auth/media dependencies.
+  - Gotchas encountered
+    - `mediaErrors` pulls `env` at import time; route tests must mock media modules before importing route handlers to avoid env validation boot errors.
+  - Useful context
+    - Matrix gate now marks all US-007 target modules as covered while remaining failures map to future Discord/message/shared-service stories.
+---
