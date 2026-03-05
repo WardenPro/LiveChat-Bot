@@ -147,7 +147,7 @@
     {
       "id": "US-003",
       "title": "Backfill tests for env configuration modules",
-      "status": "in_progress",
+      "status": "done",
       "dependsOn": [
         "US-001",
         "US-002"
@@ -161,13 +161,13 @@
         "All added tests are counted as covered by pnpm test:unit:matrix."
       ],
       "startedAt": "2026-03-05T13:15:08.918002+00:00",
-      "completedAt": null,
-      "updatedAt": "2026-03-05T13:15:08.918181+00:00"
+      "completedAt": "2026-03-05T13:25:49.035333+00:00",
+      "updatedAt": "2026-03-05T13:25:49.035225+00:00"
     },
     {
       "id": "US-004",
       "title": "Backfill tests for auth and validation services",
-      "status": "open",
+      "status": "in_progress",
       "dependsOn": [
         "US-001",
         "US-002",
@@ -180,7 +180,10 @@
         "Example: valid overlay pairing token is accepted and yields expected authenticated context.",
         "Negative case: malformed or expired token path returns unauthorized/validation failure without leaking internal details.",
         "No test performs real external calls; dependencies are mocked."
-      ]
+      ],
+      "startedAt": "2026-03-05T13:25:51.110575+00:00",
+      "completedAt": null,
+      "updatedAt": "2026-03-05T13:25:51.110710+00:00"
     },
     {
       "id": "US-005",

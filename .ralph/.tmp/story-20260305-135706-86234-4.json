@@ -1,0 +1,14 @@
+{
+  "ok": true,
+  "total": 12,
+  "remaining": 9,
+  "quality_gates": [
+    "pnpm lint",
+    "pnpm build",
+    "pnpm characterization",
+    "pnpm test:unit",
+    "pnpm test:unit:matrix"
+  ],
+  "id": "US-004",
+  "title": "Backfill tests for auth and validation services"
+}
