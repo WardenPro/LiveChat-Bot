@@ -1,0 +1,14 @@
+{
+  "ok": true,
+  "total": 12,
+  "remaining": 7,
+  "quality_gates": [
+    "pnpm lint",
+    "pnpm build",
+    "pnpm characterization",
+    "pnpm test:unit",
+    "pnpm test:unit:matrix"
+  ],
+  "id": "US-006",
+  "title": "Backfill tests for socket loader lifecycle"
+}
