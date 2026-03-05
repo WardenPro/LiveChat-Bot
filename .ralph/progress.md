@@ -693,3 +693,41 @@ Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/ru
   - Useful context
     - Matrix output is JSON-first and directly usable in CI logs for parsing missing module paths.
 ---
+## [2026-03-05 14:24 CET] - US-003: Backfill tests for env configuration modules
+Thread: 41114
+Run: 20260305-135706-86234 (iteration 3)
+Run log: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-135706-86234-iter-3.log
+Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-135706-86234-iter-3.md
+- Guardrails reviewed: yes
+- No-commit run: false
+- Commit: c4245cd test(env): backfill env configuration unit tests
+- Post-commit status: `clean`
+- Verification:
+  - Command: pnpm vitest run --config vitest.config.ts tests/unit/services/env.test.ts tests/unit/services/env/*.test.ts -> PASS
+  - Command: pnpm lint -> PASS
+  - Command: pnpm build -> PASS
+  - Command: pnpm characterization -> PASS
+  - Command: pnpm test:unit -> PASS
+  - Command: pnpm test:unit:matrix -> FAIL (expected at this stage; reports uncovered runtime modules outside US-003 scope)
+  - Command: API_URL=https://api.livechat.example DISCORD_TOKEN=dev-token DISCORD_CLIENT_ID=dev-client DATABASE_URL=file:./sqlite.dev-smoke.db pnpm dev (bounded smoke) -> FAIL (expected with dummy Discord credentials; bootstrap reached listening state)
+- Files changed:
+  - .agents/tasks/prd-module-unit-tests.json
+  - tests/unit/services/env.test.ts
+  - tests/unit/services/env/configSchema.test.ts
+  - tests/unit/services/env/defaults.test.ts
+  - tests/unit/services/env/parsers.test.ts
+  - tests/unit/services/env/runtimeConfig.test.ts
+  - tests/unit/services/env/runtimeEnvFixture.ts
+  - .ralph/progress.md
+- What was implemented
+  - Added characterization-style unit tests for `src/services/env.ts` covering `loadEnv`, `NODE_ENV` normalization helpers, default fallback when `NODE_ENV` is absent, and startup validation error category on invalid numeric input.
+  - Added focused unit tests for `src/services/env/configSchema.ts`, `defaults.ts`, `parsers.ts`, and `runtimeConfig.ts`, including required/optional/default parsing, numeric normalization, and invalid numeric/enum error handling.
+  - Confirmed `pnpm test:unit:matrix` now recognizes all env modules as covered: `src/services/env.ts` and `src/services/env/*`.
+- **Learnings for future iterations:**
+  - Patterns discovered
+    - A shared `createRuntimeEnv` fixture keeps env-module tests deterministic while preserving required-runtime inputs.
+  - Gotchas encountered
+    - `pnpm dev` performs Discord command registration/login at startup; smoke tests with placeholder credentials reach server bootstrap but still emit expected 401/token errors.
+  - Useful context
+    - Matrix gate failure count dropped to `64` with env module coverage now mapped for US-003.
+---
