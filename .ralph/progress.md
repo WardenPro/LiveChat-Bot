@@ -816,3 +816,46 @@ Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/ru
   - Useful context
   - `pnpm test:unit:matrix` still fails globally due remaining non-media modules, but US-005 media-module coverage is now present in `coveredModules`.
 ---
+## [2026-03-05 15:00 CET] - US-006: Backfill tests for socket loader lifecycle
+Thread: 55988
+Run: 20260305-135706-86234 (iteration 6)
+Run log: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-135706-86234-iter-6.log
+Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-135706-86234-iter-6.md
+- Guardrails reviewed: yes
+- No-commit run: false
+- Commit: dcb92f6 test(socket): backfill socket lifecycle coverage
+- Post-commit status: `clean`
+- Verification:
+  - Command: pnpm lint -> PASS
+  - Command: pnpm build -> PASS
+  - Command: pnpm characterization -> PASS
+  - Command: pnpm test:unit -> PASS
+  - Command: pnpm test:unit:matrix -> FAIL (global uncovered modules remain outside US-006 scope; socket modules now listed as covered)
+  - Command: API_URL=http://localhost:3000 DISCORD_TOKEN=test-token DISCORD_CLIENT_ID=test-client DATABASE_URL=file:./sqlite.db pnpm dev -> FAIL (startup reached listening state; expected Discord auth failures with placeholder credentials)
+- Files changed:
+  - .agents/tasks/prd-module-unit-tests.json
+  - .ralph/.tmp/prompt-20260305-135706-86234-6.md
+  - .ralph/.tmp/story-20260305-135706-86234-6.json
+  - .ralph/.tmp/story-20260305-135706-86234-6.md
+  - .ralph/runs/run-20260305-135706-86234-iter-5.md
+  - tests/unit/loaders/socket/socketAuthentication.test.ts
+  - tests/unit/loaders/socket/socketConnectionState.test.ts
+  - tests/unit/loaders/socket/socketEventDispatch.test.ts
+  - tests/unit/loaders/socket/types.test.ts
+  - tests/unit/loaders/socket/valueUtils.test.ts
+  - tests/unit/loaders/socketLoader.test.ts
+  - .ralph/progress.md
+- What was implemented
+- Added characterization-style unit tests for `src/loaders/socketLoader.ts` and all `src/loaders/socket/*` modules.
+- Covered positive and negative lifecycle paths: authenticated handshake wiring, missing guild disconnect rejection, auth middleware success/failure/error mapping, connection peer broadcasting, disconnect cleanup, and event dispatcher routing.
+- Asserted emitted payload shapes and transitions with mocked socket/Fastify interfaces, including heartbeat normalization, playback-state normalization, stop/manual-stop dispatch, meme trigger accept/reject branches, and disconnect lifecycle callbacks.
+- Added type-contract coverage for `src/loaders/socket/types.ts` and utility behavior coverage for `src/loaders/socket/valueUtils.ts`.
+- Confirmed matrix output now recognizes all socket modules as covered.
+- **Learnings for future iterations:**
+  - Patterns discovered
+  - Socket lifecycle modules are deterministic to test by capturing registered handlers from mocked Socket.IO objects instead of booting a full server.
+  - Gotchas encountered
+  - `pnpm dev` is long-running and requires explicit process termination in automation; placeholder Discord credentials still produce expected 401/token errors after successful server bootstrap.
+  - Useful context
+  - `pnpm test:unit:matrix` missing count dropped from 54 to 48 with six socket module entries added to `coveredModules`.
+---
