@@ -4,7 +4,7 @@ import Fastify from 'fastify';
 import FastifyCORS from '@fastify/cors';
 import GracefulServer from '@gquittet/graceful-server';
 import { Server as SocketIoServer } from 'socket.io';
-import { loadRoutes } from './loaders/RESTLoader';
+import { loadRestRoutes } from './loaders/RESTLoader';
 import { loadSocket } from './loaders/socketLoader';
 import { loadDiscord } from './loaders/DiscordLoader';
 import { loadRosetty } from './services/i18n/loader';
@@ -148,7 +148,7 @@ export const runServer = async () => {
   logger.info('[BOOT] Playback scheduler initialized');
   await loadSocket(fastify);
   logger.info('[BOOT] Socket loader ready');
-  await loadRoutes(fastify);
+  await loadRestRoutes(fastify);
   logger.info('[BOOT] REST routes ready');
   void loadDiscord(fastify).catch((error) => {
     logger.error(error, '[DISCORD] Initialization failed');

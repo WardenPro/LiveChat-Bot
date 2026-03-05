@@ -83,7 +83,7 @@ const loadRestLoader = async () => {
 
   try {
     const restLoaderModule = await import('../loaders/RESTLoader');
-    return restLoaderModule.loadRoutes;
+    return restLoaderModule.loadRestRoutes;
   } finally {
     moduleLoader._load = originalLoad;
   }
@@ -104,9 +104,9 @@ export const runRestRouteDomainsCharacterization = async () => {
 
   global.prisma = createRestRoutesPrismaStub(state, hashToken(overlayClientToken)) as any;
 
-  const loadRoutes = await loadRestLoader();
+  const loadRestRoutes = await loadRestLoader();
   const fastify = Fastify({ logger: false });
-  await loadRoutes(fastify as unknown as FastifyCustomInstance);
+  await loadRestRoutes(fastify as unknown as FastifyCustomInstance);
 
   const overlayConfig = await fastify.inject({
     method: 'GET',

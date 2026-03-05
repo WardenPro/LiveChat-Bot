@@ -1,7 +1,7 @@
 import assert from 'assert';
 import Fastify from 'fastify';
 
-import { AdminRoutes } from '../components/admin/adminRoutes';
+import { createAdminRoutes } from '../components/admin/adminRoutes';
 import { ensureCharacterizationGlobals, toValueShape } from './utils';
 
 interface IngestClientCreateData {
@@ -70,7 +70,7 @@ export const runAdminIngestClientValidationCharacterization = async () => {
   } as any;
 
   const fastify = Fastify({ logger: false });
-  await fastify.register(AdminRoutes() as any, {
+  await fastify.register(createAdminRoutes() as any, {
     prefix: '/admin',
   });
 

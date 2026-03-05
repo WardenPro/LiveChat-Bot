@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "total": 14,
+  "remaining": 2,
+  "quality_gates": [
+    "pnpm lint",
+    "pnpm build"
+  ],
+  "id": "US-013",
+  "title": "Align naming and formatting conventions across modules"
+}

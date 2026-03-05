@@ -102,7 +102,10 @@ const purgeOneAsset = async (asset: { id: string; storagePath: string }) => {
   });
 };
 
-export const enforceNonPersistentCacheBudget = async (params: { requiredBytes: number; excludeAssetId?: string | null }) => {
+export const enforceNonPersistentCacheBudget = async (params: {
+  requiredBytes: number;
+  excludeAssetId?: string | null;
+}) => {
   const requiredBytes = toSafeSizeBytes(params.requiredBytes);
   const maxTotalBytes = getNonPersistentCacheMaxTotalBytes();
 

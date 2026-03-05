@@ -1,6 +1,6 @@
-import { OVERLAY_SOCKET_EVENTS } from '@livechat/overlay-protocol';
 import { PlaybackJobStatus } from './prisma/prismaEnums';
 import { getPlaybackScheduler } from './playbackScheduler';
+import { OVERLAY_SOCKET_EVENTS } from '@livechat/overlay-protocol';
 
 type ManualStopOptions = {
   logLabel?: string;
@@ -46,7 +46,8 @@ export const executeManualStopForGuild = async (
     },
   });
 
-  const logLabel = typeof options.logLabel === 'string' && options.logLabel.trim() ? options.logLabel.trim() : 'Stop command';
+  const logLabel =
+    typeof options.logLabel === 'string' && options.logLabel.trim() ? options.logLabel.trim() : 'Stop command';
   logger.info(`[PLAYBACK] ${logLabel} released ${releasedJobs.count} playing job(s) for guild ${normalizedGuildId}`);
 
   const playbackScheduler = getPlaybackScheduler();

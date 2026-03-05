@@ -74,7 +74,7 @@ const toOptionalBoolean = parseOptionalBoolean;
 const toBooleanFlag = parseBooleanFlag;
 const toOptionalDurationSec = parseOptionalDurationSec;
 
-export const IngestRoutes = () =>
+export const createIngestRoutes = () =>
   async function (fastify: FastifyCustomInstance) {
     fastify.post<{ Body: ConsumeIngestPairingBody }>('/pair/consume', async (request, reply) => {
       const rawCode = parseBodyNonEmptyString(request.body, 'code')?.toUpperCase() || null;
@@ -525,3 +525,6 @@ export const IngestRoutes = () =>
       }
     });
   };
+
+// Legacy alias kept for phased migration compatibility.
+export const IngestRoutes = createIngestRoutes;

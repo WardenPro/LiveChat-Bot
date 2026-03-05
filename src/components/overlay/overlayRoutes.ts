@@ -213,7 +213,7 @@ const authorizeOverlayRequest = async (
   return authResult;
 };
 
-export const OverlayRoutes = () =>
+export const createOverlayRoutes = () =>
   async function (fastify: FastifyCustomInstance) {
     fastify.post<{ Body: ConsumePairingBody }>('/pair/consume', async (request, reply) => {
       const rawCode = parseBodyNonEmptyString(request.body, 'code')?.toUpperCase() || null;
@@ -557,3 +557,6 @@ export const OverlayRoutes = () =>
       },
     );
   };
+
+// Legacy alias kept for phased migration compatibility.
+export const OverlayRoutes = createOverlayRoutes;

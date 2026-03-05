@@ -2349,7 +2349,7 @@ const buildAdminPanelHtml = () => {
 </html>`;
 };
 
-export const AdminRoutes = () =>
+export const createAdminRoutes = () =>
   async function (fastify: FastifyCustomInstance) {
     fastify.get('/', async (request, reply) => {
       if (!(await assertAdminAccess(request, reply))) {
@@ -3251,3 +3251,6 @@ export const AdminRoutes = () =>
       });
     });
   };
+
+// Legacy alias kept for phased migration compatibility.
+export const AdminRoutes = createAdminRoutes;

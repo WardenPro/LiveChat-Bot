@@ -70,11 +70,50 @@ Moved internal modules use wrappers for phased migration:
 | `src/services/prisma/loadPrisma.ts` | `src/repositories/prisma/loadPrisma.ts` | Legacy file kept as `export *` wrapper |
 | `src/services/prisma/prismaEnums.ts` | `src/repositories/prisma/prismaEnums.ts` | Legacy file kept as `export *` wrapper |
 
+US-013 naming compatibility aliases (same file, canonical symbol change):
+
+| Module | Canonical export | Legacy compatibility export | Status |
+| --- | --- | --- | --- |
+| `src/components/admin/adminRoutes.ts` | `createAdminRoutes` | `AdminRoutes` | Legacy alias kept, new code uses canonical export |
+| `src/components/ingest/ingestRoutes.ts` | `createIngestRoutes` | `IngestRoutes` | Legacy alias kept, new code uses canonical export |
+| `src/components/overlay/overlayRoutes.ts` | `createOverlayRoutes` | `OverlayRoutes` | Legacy alias kept, new code uses canonical export |
+| `src/loaders/RESTLoader.ts` | `loadRestRoutes` | `loadRoutes` | Legacy alias kept, new code uses canonical export |
+
 Compatibility example:
 
 ```ts
 // Legacy import (still valid during migration)
 import { loadPrismaClient } from './services/prisma/loadPrisma';
+```
+
+## Naming And Formatting Conventions (US-013)
+
+Conventions applied and required in touched modules:
+
+- File naming:
+  - Runtime/internal modules use lower-camel filenames, for example `overlayRoutes.ts`, `registerDomainRoutes.ts`.
+  - Compatibility-locked loader entry files remain unchanged (`RESTLoader.ts`, `DiscordLoader.ts`, `socketLoader.ts`).
+- Symbol naming:
+  - Factories: `create*` (`createOverlayRoutes`).
+  - Registrars: `register*` (`registerOverlayDomainRoutes`).
+  - Loaders: `load*` with explicit domain (`loadRestRoutes`).
+- Export style:
+  - Prefer named exports (`export const`, `export type`).
+  - Avoid new default exports in runtime code.
+  - Keep legacy aliases only as migration shims; do not use them in new imports.
+
+Accepted examples:
+
+```ts
+import { createOverlayRoutes } from '../../components/overlay/overlayRoutes';
+import { loadRestRoutes } from '../loaders/RESTLoader';
+```
+
+Rejected examples:
+
+```ts
+import { OverlayRoutes } from '../../components/overlay/overlayRoutes'; // legacy alias
+import { loadRoutes } from '../loaders/RESTLoader'; // ambiguous loader scope
 ```
 
 ## Out-of-Scope Rejections (Negative Case)

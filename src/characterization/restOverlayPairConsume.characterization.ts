@@ -186,7 +186,7 @@ const loadOverlayRoutes = async () => {
 
   try {
     const overlayRoutesModule = await import('../components/overlay/overlayRoutes');
-    return overlayRoutesModule.OverlayRoutes;
+    return overlayRoutesModule.createOverlayRoutes;
   } finally {
     moduleLoader._load = originalLoad;
   }
