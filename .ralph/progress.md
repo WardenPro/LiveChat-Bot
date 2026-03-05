@@ -303,3 +303,50 @@ Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/ru
   - Useful context
     - Characterization now includes an `error-handling` suite that locks the centralized HTTP mapping contract and sensitive log redaction expectations.
 ---
+## [2026-03-05 11:11:15 CET] - US-008: Harden environment parsing and secure defaults
+Thread: 
+Run: 20260305-090958-5834 (iteration 8)
+Run log: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-090958-5834-iter-8.log
+Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-090958-5834-iter-8.md
+- Guardrails reviewed: yes
+- No-commit run: false
+- Commit: e9475bb refactor(config): harden env parsing startup
+- Post-commit status: `clean`
+- Verification:
+  - Command: pnpm characterization -> FAIL (existing unrelated failure in `restOverlayPairConsume.characterization.ts`: "pairing code should remain present after consume")
+  - Command: pnpm tsx -e 'import { runEnvParsingCharacterization } from "./src/characterization/envParsing.characterization"; runEnvParsingCharacterization().then((artifact)=>{process.stdout.write(JSON.stringify(artifact, null, 2) + "\\n");}).catch((error)=>{process.stderr.write(String(error?.stack || error)); process.exit(1);});' -> PASS
+  - Command: pnpm lint -> PASS
+  - Command: pnpm build -> PASS
+  - Command: DATABASE_URL='file:./sqlite.db' pnpm migration:up -> PASS
+  - Command: API_URL='http://localhost:3333' DISCORD_TOKEN='smoke-token' DISCORD_CLIENT_ID='smoke-client-id' DATABASE_URL='file:./sqlite.db' npx -y node@20.11.1 node_modules/tsx/dist/cli.mjs ./src/index.ts -> FAIL (existing runtime `ERR_PACKAGE_PATH_NOT_EXPORTED` from `file-type`)
+- Files changed:
+  - .agents/tasks/prd-livechat-refactor.json
+  - .ralph/.tmp/prompt-20260305-090958-5834-8.md
+  - .ralph/.tmp/story-20260305-090958-5834-8.json
+  - .ralph/.tmp/story-20260305-090958-5834-8.md
+  - .ralph/runs/run-20260305-090958-5834-iter-7.md
+  - src/characterization/RUNBOOK.md
+  - src/characterization/baselines/env-parsing.baseline.json
+  - src/characterization/envParsing.characterization.ts
+  - src/characterization/runCharacterization.ts
+  - src/index.ts
+  - src/services/env.ts
+  - src/services/env/configSchema.ts
+  - src/services/env/defaults.ts
+  - src/services/env/parsers.ts
+  - src/services/env/runtimeConfig.ts
+  - src/services/runtimeSettings.ts
+- What was implemented
+  - Refactored env parsing into typed modules (`defaults`, `parsers`, `configSchema`, `runtimeConfig`) while preserving existing env names and valid-value outputs.
+  - Added strict numeric parsing and deterministic `EnvironmentValidationError` reporting with key-only error metadata (no raw env value leakage).
+  - Hardened startup by loading env during bootstrap and surfacing invalid-config failures through controlled boot error handling.
+  - Added env characterization coverage for production-like config parity and invalid config rejection, with a dedicated baseline and runbook update.
+- **Learnings for future iterations:**
+  - Patterns discovered
+    - Splitting env defaults/parsers/schema/invariants keeps runtime config changes isolated and safer to evolve without contract drift.
+  - Gotchas encountered
+    - `pnpm lint` runs with `--fix` and can reformat unrelated files; restore non-story files before final staging.
+    - Runtime smoke is currently blocked by an existing `file-type` export mismatch in this workspace (`ERR_PACKAGE_PATH_NOT_EXPORTED`).
+  - Useful context
+    - The new `env-parsing` characterization suite now guards both valid production-like output parity and deterministic invalid-input rejection behavior.
+---
