@@ -771,3 +771,48 @@ Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/ru
   - Useful context
     - Bounded `pnpm dev` smoke with a bootstrap marker check confirms startup health even when Discord login fails with placeholder credentials.
 ---
+## [2026-03-05 14:48:21 CET] - US-005: Backfill tests for media service pipeline
+Thread: 
+Run: 20260305-135706-86234 (iteration 5)
+Run log: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-135706-86234-iter-5.log
+Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-135706-86234-iter-5.md
+- Guardrails reviewed: yes
+- No-commit run: false
+- Commit: e419caa test(media): backfill media pipeline unit tests (or `none` + reason)
+- Post-commit status: `clean`
+- Verification:
+  - Command: pnpm lint -> PASS
+  - Command: pnpm build -> PASS
+  - Command: pnpm characterization -> PASS
+  - Command: pnpm test:unit -> PASS
+  - Command: pnpm test:unit:matrix -> FAIL
+  - Command: API_URL=http://localhost:3000 DISCORD_TOKEN=test-token DISCORD_CLIENT_ID=test-client DATABASE_URL=file:./sqlite.db pnpm dev -> FAIL
+- Files changed:
+  - .agents/tasks/prd-module-unit-tests.json
+  - .ralph/.tmp/prompt-20260305-135706-86234-5.md
+  - .ralph/.tmp/story-20260305-135706-86234-5.json
+  - .ralph/.tmp/story-20260305-135706-86234-5.md
+  - .ralph/runs/run-20260305-135706-86234-iter-4.md
+  - tests/unit/services/media/mediaCache.test.ts
+  - tests/unit/services/media/mediaErrors.test.ts
+  - tests/unit/services/media/mediaIngestion.test.ts
+  - tests/unit/services/media/mediaLifecycleOrchestrator.test.ts
+  - tests/unit/services/media/mediaSourceResolver.test.ts
+  - tests/unit/services/media/mediaTestFixture.ts
+  - tests/unit/services/media/mediaTranscode.test.ts
+  - .ralph/progress.md
+- What was implemented
+  - Added deterministic unit tests for all `src/services/media/*` modules.
+  - Covered ingestion orchestration (remote/local), cache hit/bypass, typed failure handling, and cleanup execution paths.
+  - Added transcode boundary tests (direct-copy MP4 path, audio-only container normalization, invalid-output rejection).
+  - Added source resolver tests for canonicalization, YouTube offsets, TikTok short-link resolution, and Twitter media substitution.
+  - Added media error classification/localization tests and cache budget/purge tests with filesystem mocks.
+  - Verified matrix report now includes all media modules as covered.
+- **Learnings for future iterations:**
+  - Patterns discovered
+  - Media pipeline modules are testable without runtime refactors by mocking module dependencies and process boundaries.
+  - Gotchas encountered
+  - `src/services/media/mediaErrors.ts` imports `src/services/env` at module load, so tests must mock that env module before imports.
+  - Useful context
+  - `pnpm test:unit:matrix` still fails globally due remaining non-media modules, but US-005 media-module coverage is now present in `coveredModules`.
+---
