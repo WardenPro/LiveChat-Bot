@@ -230,7 +230,7 @@
     {
       "id": "US-007",
       "title": "Backfill tests for REST loader and route domains",
-      "status": "in_progress",
+      "status": "done",
       "dependsOn": [
         "US-001",
         "US-002",
@@ -245,13 +245,13 @@
         "Protected routes assert auth guard behavior for valid and invalid credentials."
       ],
       "startedAt": "2026-03-05T14:01:52.621636+00:00",
-      "completedAt": null,
-      "updatedAt": "2026-03-05T14:01:52.621828+00:00"
+      "completedAt": "2026-03-05T14:13:55.314614+00:00",
+      "updatedAt": "2026-03-05T14:13:55.314474+00:00"
     },
     {
       "id": "US-008",
       "title": "Backfill tests for Discord loader internals",
-      "status": "open",
+      "status": "in_progress",
       "dependsOn": [
         "US-001",
         "US-002",
@@ -264,7 +264,10 @@
         "Example: known command metadata is registered and dispatched to the expected execution handler.",
         "Negative case: unknown command or execution exception follows existing error-handling path without crashing loader flow.",
         "Module inventory marks all Discord loader internals as covered."
-      ]
+      ],
+      "startedAt": "2026-03-05T14:13:57.397854+00:00",
+      "completedAt": null,
+      "updatedAt": "2026-03-05T14:13:57.398067+00:00"
     },
     {
       "id": "US-009",
