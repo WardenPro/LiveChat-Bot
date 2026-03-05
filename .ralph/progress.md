@@ -606,3 +606,48 @@ Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/ru
   - Useful context
     - Current release artifact coverage for `US-014` is consolidated in `src/architecture/release-checklist-us014.md` and backed by `.ralph/characterization/latest/*.latest.json` outputs.
 ---
+## [2026-03-05 14:04 CET] - US-001: Set up deterministic unit-test foundation
+Thread: 
+Run: 20260305-135706-86234 (iteration 1)
+Run log: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-135706-86234-iter-1.log
+Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-135706-86234-iter-1.md
+- Guardrails reviewed: yes
+- No-commit run: false
+- Commit: caf47a1 test(unit-tests): add vitest test foundation
+- Post-commit status: `clean`
+- Verification:
+  - Command: pnpm test:unit -> PASS
+  - Command: tmp_test="tests/unit/samples/tmpDeliberateFail.test.ts"; trap 'rm -f "$tmp_test"' EXIT; cat > "$tmp_test" <<'EOT' ... EOT; pnpm test:unit (expected non-zero); cleanup -> PASS
+  - Command: pnpm test:unit:coverage -> PASS
+  - Command: pnpm lint -> PASS
+  - Command: pnpm build -> PASS
+  - Command: pnpm characterization -> PASS
+  - Command: pnpm test:unit:matrix -> PASS
+  - Command: API_URL="http://localhost:3000" DISCORD_TOKEN="invalid-token" DISCORD_CLIENT_ID="1234567890" DATABASE_URL="file:./sqlite.db" pnpm dev (bounded smoke) -> PASS (startup reached Discord auth; expected invalid-token failure)
+- Files changed:
+  - .agents/tasks/prd-livechat-refactor.json
+  - .agents/tasks/prd-module-unit-tests.json
+  - .ralph/.tmp/prd-prompt-20260305-135259-85728.md
+  - .ralph/.tmp/prompt-20260305-135706-86234-1.md
+  - .ralph/.tmp/story-20260305-135706-86234-1.json
+  - .ralph/.tmp/story-20260305-135706-86234-1.md
+  - .ralph/runs/run-20260305-090958-5834-iter-14.md
+  - package.json
+  - pnpm-lock.yaml
+  - tests/unit/samples/sampleMath.test.ts
+  - tests/unit/samples/sampleMath.ts
+  - vitest.config.ts
+- What was implemented
+  - Installed `vitest` and `@vitest/coverage-v8` as dev dependencies at workspace root.
+  - Added deterministic unit-test scripts: `test:unit`, `test:unit:coverage`, and a temporary `test:unit:matrix` alias for current gate compatibility.
+  - Added a Node-oriented `vitest.config.ts` with deterministic test discovery and V8 coverage output.
+  - Added a sample module and unit tests proving both happy-path and handled error-path assertions.
+  - Verified the negative case by injecting a deliberate failing assertion and confirming `pnpm test:unit` exits non-zero.
+- **Learnings for future iterations:**
+  - Patterns discovered
+    - `pnpm add -D` at this repo root requires `-w` because the repository is a pnpm workspace root.
+  - Gotchas encountered
+    - In `zsh`, `status` is readonly; use another variable name when capturing exit codes in shell checks.
+  - Useful context
+    - `test:unit:matrix` is currently a temporary alias and should be replaced by the dedicated module inventory gate in US-002.
+---
