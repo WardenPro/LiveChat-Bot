@@ -20,5 +20,31 @@
       "keep-asset",
       "touch-asset"
     ]
+  },
+  "ingestionLifecycle": {
+    "remoteIngestionSuccess": {
+      "returnedAssetId": "remote-ready-asset",
+      "returnedAssetKind": "VIDEO",
+      "processingUpserted": true,
+      "tempDirCreated": true,
+      "tempDirCleaned": true,
+      "downloaded": true,
+      "normalized": true,
+      "markedFailed": false
+    },
+    "remoteIngestionTimeoutFailure": {
+      "thrownCode": "DOWNLOAD_TIMEOUT",
+      "processingUpserted": true,
+      "tempDirCreated": true,
+      "tempDirCleaned": true,
+      "markedFailedCode": "DOWNLOAD_TIMEOUT"
+    },
+    "localIngestionCleanupOnFailure": {
+      "thrownCode": "TRANSCODE_FAILED",
+      "processingUpserted": true,
+      "tempDirCreated": true,
+      "tempDirCleaned": true,
+      "markedFailedCode": "TRANSCODE_FAILED"
+    }
   }
 }

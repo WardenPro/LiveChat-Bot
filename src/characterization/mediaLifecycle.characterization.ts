@@ -3,12 +3,14 @@ import { mkdtemp, rm, stat, writeFile } from 'fs/promises';
 import os from 'os';
 import path from 'path';
 
-import { MediaAssetStatus, PlaybackJobStatus } from '../services/prisma/prismaEnums';
+import { MediaAssetKind, MediaAssetStatus, PlaybackJobStatus } from '../services/prisma/prismaEnums';
 import {
   enforceNonPersistentCacheBudget,
   purgeExpiredMediaAssets,
   touchMediaAsset,
 } from '../services/media/mediaCache';
+import { MediaIngestionError } from '../services/media/mediaErrors';
+import { ingestLocalMediaLifecycle, ingestRemoteMediaLifecycle } from '../services/media/mediaLifecycleOrchestrator';
 import { ensureCharacterizationGlobals } from './utils';
 
 interface MediaAssetState {
@@ -30,6 +32,11 @@ interface MediaAssetState {
   createdAt: Date;
   memeBoardItemsCount: number;
   playbackStatuses: string[];
+}
+
+interface LifecycleAssetState {
+  id: string;
+  kind: MediaAssetKind;
 }
 
 const createMediaPrisma = (assets: MediaAssetState[]) => {
@@ -183,6 +190,204 @@ const createMediaAsset = (
   };
 };
 
+const runIngestionOrchestrationCharacterization = async () => {
+  const remoteSuccessState = {
+    processingUpserted: false,
+    tempDirCreated: false,
+    tempDirCleaned: false,
+    downloaded: false,
+    normalized: false,
+    markedFailed: false,
+  };
+
+  const remoteIngestedAsset: LifecycleAssetState = {
+    id: 'remote-ready-asset',
+    kind: MediaAssetKind.VIDEO,
+  };
+
+  const remoteSuccessAsset = await ingestRemoteMediaLifecycle(
+    {
+      sourceUrl: 'https://example.com/video.mp4',
+      sourceHash: 'source-remote-success',
+      forceRefresh: false,
+    },
+    {
+      getReadyCachedMediaAsset: async () => null,
+      touchMediaAsset: async () => null,
+      upsertProcessingAsset: async () => {
+        remoteSuccessState.processingUpserted = true;
+      },
+      createTempDir: async () => {
+        remoteSuccessState.tempDirCreated = true;
+        return '/tmp/remote-success';
+      },
+      cleanupTempDir: async () => {
+        remoteSuccessState.tempDirCleaned = true;
+      },
+      downloadSourceToTempFile: async () => {
+        remoteSuccessState.downloaded = true;
+        return '/tmp/remote-success/download.mp4';
+      },
+      normalizeAndPersistAsset: async () => {
+        remoteSuccessState.normalized = true;
+        return remoteIngestedAsset;
+      },
+      markAssetFailed: async () => {
+        remoteSuccessState.markedFailed = true;
+      },
+      toMediaIngestionError: (error: unknown) => {
+        if (error instanceof MediaIngestionError) {
+          return error;
+        }
+
+        return new MediaIngestionError('DOWNLOAD_FAILED', 'remote failed');
+      },
+      isYouTubeUrl: () => false,
+    },
+  );
+
+  const remoteTimeoutState: {
+    processingUpserted: boolean;
+    tempDirCreated: boolean;
+    tempDirCleaned: boolean;
+    markedFailedCode: string | null;
+  } = {
+    processingUpserted: false,
+    tempDirCreated: false,
+    tempDirCleaned: false,
+    markedFailedCode: null,
+  };
+
+  let remoteTimeoutThrownCode: string | null = null;
+
+  try {
+    await ingestRemoteMediaLifecycle(
+      {
+        sourceUrl: 'https://example.com/timeout.mp4',
+        sourceHash: 'source-remote-timeout',
+        forceRefresh: false,
+      },
+      {
+        getReadyCachedMediaAsset: async () => null,
+        touchMediaAsset: async () => null,
+        upsertProcessingAsset: async () => {
+          remoteTimeoutState.processingUpserted = true;
+        },
+        createTempDir: async () => {
+          remoteTimeoutState.tempDirCreated = true;
+          return '/tmp/remote-timeout';
+        },
+        cleanupTempDir: async () => {
+          remoteTimeoutState.tempDirCleaned = true;
+        },
+        downloadSourceToTempFile: async () => {
+          throw new MediaIngestionError('DOWNLOAD_TIMEOUT', 'download timed out');
+        },
+        normalizeAndPersistAsset: async () => {
+          throw new Error('normalize should not run');
+        },
+        markAssetFailed: async (_sourceHash, error) => {
+          remoteTimeoutState.markedFailedCode = error.code;
+        },
+        toMediaIngestionError: (error: unknown) => {
+          if (error instanceof MediaIngestionError) {
+            return error;
+          }
+
+          return new MediaIngestionError('DOWNLOAD_FAILED', 'timeout fallback');
+        },
+        isYouTubeUrl: () => false,
+      },
+    );
+  } catch (error) {
+    const asMediaError = error as MediaIngestionError;
+    remoteTimeoutThrownCode = asMediaError.code;
+  }
+
+  const localFailureState: {
+    processingUpserted: boolean;
+    tempDirCreated: boolean;
+    tempDirCleaned: boolean;
+    markedFailedCode: string | null;
+  } = {
+    processingUpserted: false,
+    tempDirCreated: false,
+    tempDirCleaned: false,
+    markedFailedCode: null,
+  };
+
+  let localThrownCode: string | null = null;
+
+  try {
+    await ingestLocalMediaLifecycle(
+      {
+        filePath: '/tmp/input.wav',
+        virtualSource: 'gtts:fr:abc123',
+      },
+      {
+        canonicalizeSourceUrl: (sourceUrl: string) => sourceUrl,
+        buildSourceHash: () => 'source-local-failure',
+        getReadyCachedMediaAsset: async () => null,
+        touchMediaAsset: async () => null,
+        upsertProcessingAsset: async () => {
+          localFailureState.processingUpserted = true;
+        },
+        createTempDir: async () => {
+          localFailureState.tempDirCreated = true;
+          return '/tmp/local-failure';
+        },
+        cleanupTempDir: async () => {
+          localFailureState.tempDirCleaned = true;
+        },
+        copySourceFileToTemp: async () => '/tmp/local-failure/local-source.wav',
+        normalizeAndPersistAsset: async () => {
+          throw new Error('local normalize failure');
+        },
+        markAssetFailed: async (_sourceHash, error) => {
+          localFailureState.markedFailedCode = error.code;
+        },
+        toMediaIngestionError: (error: unknown, fallbackCode) => {
+          if (error instanceof MediaIngestionError) {
+            return error;
+          }
+
+          return new MediaIngestionError(fallbackCode || 'DOWNLOAD_FAILED', 'local failed');
+        },
+      },
+    );
+  } catch (error) {
+    const asMediaError = error as MediaIngestionError;
+    localThrownCode = asMediaError.code;
+  }
+
+  return {
+    remoteIngestionSuccess: {
+      returnedAssetId: remoteSuccessAsset.id,
+      returnedAssetKind: remoteSuccessAsset.kind,
+      processingUpserted: remoteSuccessState.processingUpserted,
+      tempDirCreated: remoteSuccessState.tempDirCreated,
+      tempDirCleaned: remoteSuccessState.tempDirCleaned,
+      downloaded: remoteSuccessState.downloaded,
+      normalized: remoteSuccessState.normalized,
+      markedFailed: remoteSuccessState.markedFailed,
+    },
+    remoteIngestionTimeoutFailure: {
+      thrownCode: remoteTimeoutThrownCode,
+      processingUpserted: remoteTimeoutState.processingUpserted,
+      tempDirCreated: remoteTimeoutState.tempDirCreated,
+      tempDirCleaned: remoteTimeoutState.tempDirCleaned,
+      markedFailedCode: remoteTimeoutState.markedFailedCode,
+    },
+    localIngestionCleanupOnFailure: {
+      thrownCode: localThrownCode,
+      processingUpserted: localFailureState.processingUpserted,
+      tempDirCreated: localFailureState.tempDirCreated,
+      tempDirCleaned: localFailureState.tempDirCleaned,
+      markedFailedCode: localFailureState.markedFailedCode,
+    },
+  };
+};
+
 export const runMediaLifecycleCharacterization = async () => {
   const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'livechat-media-characterization-'));
 
@@ -285,6 +490,7 @@ export const runMediaLifecycleCharacterization = async () => {
   const expiredExistsAfterPurge = mediaAssets.some((asset) => asset.id === 'expired-asset');
   const staleProcessingExistsAfterPurge = mediaAssets.some((asset) => asset.id === 'stale-processing-asset');
   const freshExistsAfterPurge = mediaAssets.some((asset) => asset.id === 'fresh-ready-asset');
+  const ingestionLifecycle = await runIngestionOrchestrationCharacterization();
 
   await rm(tmpDir, { recursive: true, force: true });
 
@@ -307,5 +513,6 @@ export const runMediaLifecycleCharacterization = async () => {
       freshAssetStillPresent: freshExistsAfterPurge,
       remainingAssetIds: mediaAssets.map((asset) => asset.id).sort(),
     },
+    ingestionLifecycle,
   };
 };

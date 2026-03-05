@@ -22,6 +22,7 @@ import {
   pickMostRelevantMediaError,
   toMediaIngestionError,
 } from './mediaErrors';
+import { ingestLocalMediaLifecycle, ingestRemoteMediaLifecycle } from './mediaLifecycleOrchestrator';
 import { normalizeDownloadedMedia } from './mediaTranscode';
 import { buildSourceHash, canonicalizeSourceUrl, resolveMediaSource } from './mediaSourceResolver';
 
@@ -2015,95 +2016,71 @@ const ingestFromSourceUrlInternal = async (
     forceRefresh?: boolean;
   },
 ): Promise<IngestedMediaAsset> => {
-  const forceRefresh = options?.forceRefresh === true;
-  const cached = forceRefresh ? null : await getReadyCachedMediaAsset(sourceHash);
-
-  if (cached) {
-    logger.info(`[MEDIA] Cache hit ${sourceHash.slice(0, 8)} (${sanitizeUrlForLog(sourceUrl)})`);
-    const touchedAsset = await touchMediaAsset(cached.id);
-    return touchedAsset || cached;
-  }
-
-  if (forceRefresh) {
-    logger.info(`[MEDIA] Cache bypass ${sourceHash.slice(0, 8)} (${sanitizeUrlForLog(sourceUrl)})`);
-  }
-
-  await upsertProcessingAsset(sourceHash, sourceUrl);
-
-  const tmpDir = await createTempDir();
-  const startedAtMs = Date.now();
-
-  try {
-    const downloadedFilePath = await downloadSourceToTempFile(sourceUrl, tmpDir);
-    const downloadedAtMs = Date.now();
-
-    const normalizedAsset = await normalizeAndPersistAsset({
-      sourceHash,
+  return ingestRemoteMediaLifecycle(
+    {
       sourceUrl,
-      inputFilePath: downloadedFilePath,
-    });
-
-    if (isYouTubeUrl(sourceUrl) && normalizedAsset.kind === MediaAssetKind.AUDIO) {
-      throw new MediaIngestionError(
-        'INVALID_MEDIA',
-        'YouTube source resolved to audio-only media',
-        `YouTube source produced audio-only media for ${sourceUrl}`,
-      );
-    }
-
-    const finishedAtMs = Date.now();
-
-    logger.info(
-      `[MEDIA] Ingested ${sourceHash.slice(0, 8)} in ${finishedAtMs - startedAtMs}ms (download ${
-        downloadedAtMs - startedAtMs
-      }ms, normalize ${finishedAtMs - downloadedAtMs}ms)`,
-    );
-
-    return normalizedAsset;
-  } catch (error) {
-    const mediaError = toMediaIngestionError(error);
-    await markAssetFailed(sourceHash, mediaError);
-    throw mediaError;
-  } finally {
-    await fsPromises.rm(tmpDir, { recursive: true, force: true });
-  }
+      sourceHash,
+      forceRefresh: options?.forceRefresh === true,
+    },
+    {
+      getReadyCachedMediaAsset,
+      touchMediaAsset,
+      upsertProcessingAsset,
+      createTempDir,
+      cleanupTempDir: async (tmpDir: string) => {
+        await fsPromises.rm(tmpDir, { recursive: true, force: true });
+      },
+      downloadSourceToTempFile,
+      normalizeAndPersistAsset,
+      markAssetFailed,
+      toMediaIngestionError,
+      isYouTubeUrl,
+      onCacheHit: ({ sourceHash: cachedSourceHash, sourceUrl: cachedSourceUrl }) => {
+        logger.info(`[MEDIA] Cache hit ${cachedSourceHash.slice(0, 8)} (${sanitizeUrlForLog(cachedSourceUrl)})`);
+      },
+      onCacheBypass: ({ sourceHash: bypassSourceHash, sourceUrl: bypassSourceUrl }) => {
+        logger.info(`[MEDIA] Cache bypass ${bypassSourceHash.slice(0, 8)} (${sanitizeUrlForLog(bypassSourceUrl)})`);
+      },
+      onIngested: ({ sourceHash: ingestedSourceHash, startedAtMs, downloadedAtMs, finishedAtMs }) => {
+        logger.info(
+          `[MEDIA] Ingested ${ingestedSourceHash.slice(0, 8)} in ${finishedAtMs - startedAtMs}ms (download ${
+            downloadedAtMs - startedAtMs
+          }ms, normalize ${finishedAtMs - downloadedAtMs}ms)`,
+        );
+      },
+    },
+  );
 };
 
 const ingestFromLocalFileInternal = async (filePath: string, virtualSource: string): Promise<IngestedMediaAsset> => {
-  const canonicalSource = canonicalizeSourceUrl(virtualSource);
-  const sourceHash = buildSourceHash(canonicalSource);
+  return ingestLocalMediaLifecycle(
+    {
+      filePath,
+      virtualSource,
+    },
+    {
+      canonicalizeSourceUrl,
+      buildSourceHash,
+      getReadyCachedMediaAsset,
+      touchMediaAsset,
+      upsertProcessingAsset,
+      createTempDir,
+      cleanupTempDir: async (tmpDir: string) => {
+        await fsPromises.rm(tmpDir, { recursive: true, force: true });
+      },
+      copySourceFileToTemp: async (sourceFilePath: string, tmpDir: string) => {
+        const fileExtension = path.extname(sourceFilePath);
+        const copiedPath = path.join(tmpDir, `local-source${fileExtension || '.bin'}`);
 
-  const cached = await getReadyCachedMediaAsset(sourceHash);
+        await fsPromises.copyFile(sourceFilePath, copiedPath);
 
-  if (cached) {
-    const touchedAsset = await touchMediaAsset(cached.id);
-    return touchedAsset || cached;
-  }
-
-  await upsertProcessingAsset(sourceHash, canonicalSource);
-
-  const tmpDir = await createTempDir();
-
-  try {
-    const fileExtension = path.extname(filePath);
-    const copiedPath = path.join(tmpDir, `local-source${fileExtension || '.bin'}`);
-
-    await fsPromises.copyFile(filePath, copiedPath);
-
-    const normalizedAsset = await normalizeAndPersistAsset({
-      sourceHash,
-      sourceUrl: canonicalSource,
-      inputFilePath: copiedPath,
-    });
-
-    return normalizedAsset;
-  } catch (error) {
-    const mediaError = toMediaIngestionError(error, 'TRANSCODE_FAILED');
-    await markAssetFailed(sourceHash, mediaError);
-    throw mediaError;
-  } finally {
-    await fsPromises.rm(tmpDir, { recursive: true, force: true });
-  }
+        return copiedPath;
+      },
+      normalizeAndPersistAsset,
+      markAssetFailed,
+      toMediaIngestionError,
+    },
+  );
 };
 
 export const ingestMediaFromSource = async (params: MediaIngestionRequest): Promise<MediaIngestionResult> => {
