@@ -1,0 +1,877 @@
+{
+  "commandCount": 14,
+  "commandNames": [
+    "alive",
+    "send",
+    "talk",
+    "pair-code",
+    "help",
+    "info",
+    "config-defaulttime",
+    "config-displayfull",
+    "config-maxtime",
+    "overlays",
+    "stop",
+    "meme-add",
+    "hsend",
+    "htalk"
+  ],
+  "commandsLoaded": [
+    "alive",
+    "send",
+    "talk",
+    "pair-code",
+    "help",
+    "info",
+    "config-defaulttime",
+    "config-displayfull",
+    "config-maxtime",
+    "overlays",
+    "stop",
+    "meme-add",
+    "hsend",
+    "htalk"
+  ],
+  "registrationPayloadShape": [
+    {
+      "contexts": "undefined",
+      "default_member_permissions": "undefined",
+      "default_permission": "undefined",
+      "description": "string",
+      "description_localizations": "undefined",
+      "dm_permission": "undefined",
+      "integration_types": "undefined",
+      "name": "string",
+      "name_localizations": "undefined",
+      "nsfw": "undefined",
+      "options": [],
+      "type": "number"
+    },
+    {
+      "contexts": "undefined",
+      "default_member_permissions": "undefined",
+      "default_permission": "undefined",
+      "description": "string",
+      "description_localizations": "undefined",
+      "dm_permission": "undefined",
+      "integration_types": "undefined",
+      "name": "string",
+      "name_localizations": "undefined",
+      "nsfw": "undefined",
+      "options": [
+        {
+          "autocomplete": "undefined",
+          "choices": "undefined",
+          "description": "string",
+          "description_localizations": "undefined",
+          "max_length": "undefined",
+          "min_length": "undefined",
+          "name": "string",
+          "name_localizations": "undefined",
+          "required": "boolean",
+          "type": "number"
+        },
+        {
+          "description": "string",
+          "description_localizations": "undefined",
+          "name": "string",
+          "name_localizations": "undefined",
+          "required": "boolean",
+          "type": "number"
+        },
+        {
+          "autocomplete": "undefined",
+          "choices": "undefined",
+          "description": "string",
+          "description_localizations": "undefined",
+          "max_length": "undefined",
+          "min_length": "undefined",
+          "name": "string",
+          "name_localizations": "undefined",
+          "required": "boolean",
+          "type": "number"
+        },
+        {
+          "description": "string",
+          "description_localizations": "undefined",
+          "name": "string",
+          "name_localizations": "undefined",
+          "required": "boolean",
+          "type": "number"
+        }
+      ],
+      "type": "number"
+    },
+    {
+      "contexts": "undefined",
+      "default_member_permissions": "undefined",
+      "default_permission": "undefined",
+      "description": "string",
+      "description_localizations": "undefined",
+      "dm_permission": "undefined",
+      "integration_types": "undefined",
+      "name": "string",
+      "name_localizations": "undefined",
+      "nsfw": "undefined",
+      "options": [
+        {
+          "autocomplete": "undefined",
+          "choices": "undefined",
+          "description": "string",
+          "description_localizations": "undefined",
+          "max_length": "undefined",
+          "min_length": "undefined",
+          "name": "string",
+          "name_localizations": "undefined",
+          "required": "boolean",
+          "type": "number"
+        },
+        {
+          "autocomplete": "undefined",
+          "choices": "undefined",
+          "description": "string",
+          "description_localizations": "undefined",
+          "max_length": "undefined",
+          "min_length": "undefined",
+          "name": "string",
+          "name_localizations": "undefined",
+          "required": "boolean",
+          "type": "number"
+        }
+      ],
+      "type": "number"
+    },
+    {
+      "contexts": "undefined",
+      "default_member_permissions": "undefined",
+      "default_permission": "undefined",
+      "description": "string",
+      "description_localizations": "undefined",
+      "dm_permission": "undefined",
+      "integration_types": "undefined",
+      "name": "string",
+      "name_localizations": "undefined",
+      "nsfw": "undefined",
+      "options": [
+        {
+          "autocomplete": "undefined",
+          "choices": [
+            {
+              "name": "string",
+              "name_localizations": "undefined",
+              "value": "string"
+            },
+            {
+              "name": "string",
+              "name_localizations": "undefined",
+              "value": "string"
+            }
+          ],
+          "description": "string",
+          "description_localizations": "undefined",
+          "max_length": "undefined",
+          "min_length": "undefined",
+          "name": "string",
+          "name_localizations": "undefined",
+          "required": "boolean",
+          "type": "number"
+        }
+      ],
+      "type": "number"
+    },
+    {
+      "contexts": "undefined",
+      "default_member_permissions": "undefined",
+      "default_permission": "undefined",
+      "description": "string",
+      "description_localizations": "undefined",
+      "dm_permission": "undefined",
+      "integration_types": "undefined",
+      "name": "string",
+      "name_localizations": "undefined",
+      "nsfw": "undefined",
+      "options": [],
+      "type": "number"
+    },
+    {
+      "contexts": "undefined",
+      "default_member_permissions": "undefined",
+      "default_permission": "undefined",
+      "description": "string",
+      "description_localizations": "undefined",
+      "dm_permission": "undefined",
+      "integration_types": "undefined",
+      "name": "string",
+      "name_localizations": "undefined",
+      "nsfw": "undefined",
+      "options": [],
+      "type": "number"
+    },
+    {
+      "contexts": "undefined",
+      "default_member_permissions": "undefined",
+      "default_permission": "undefined",
+      "description": "string",
+      "description_localizations": "undefined",
+      "dm_permission": "undefined",
+      "integration_types": "undefined",
+      "name": "string",
+      "name_localizations": "undefined",
+      "nsfw": "undefined",
+      "options": [
+        {
+          "autocomplete": "undefined",
+          "choices": "undefined",
+          "description": "string",
+          "description_localizations": "undefined",
+          "max_value": "undefined",
+          "min_value": "undefined",
+          "name": "string",
+          "name_localizations": "undefined",
+          "required": "boolean",
+          "type": "number"
+        }
+      ],
+      "type": "number"
+    },
+    {
+      "contexts": "undefined",
+      "default_member_permissions": "undefined",
+      "default_permission": "undefined",
+      "description": "string",
+      "description_localizations": "undefined",
+      "dm_permission": "undefined",
+      "integration_types": "undefined",
+      "name": "string",
+      "name_localizations": "undefined",
+      "nsfw": "undefined",
+      "options": [
+        {
+          "description": "string",
+          "description_localizations": "undefined",
+          "name": "string",
+          "name_localizations": "undefined",
+          "required": "boolean",
+          "type": "number"
+        }
+      ],
+      "type": "number"
+    },
+    {
+      "contexts": "undefined",
+      "default_member_permissions": "undefined",
+      "default_permission": "undefined",
+      "description": "string",
+      "description_localizations": "undefined",
+      "dm_permission": "undefined",
+      "integration_types": "undefined",
+      "name": "string",
+      "name_localizations": "undefined",
+      "nsfw": "undefined",
+      "options": [
+        {
+          "autocomplete": "undefined",
+          "choices": "undefined",
+          "description": "string",
+          "description_localizations": "undefined",
+          "max_value": "undefined",
+          "min_value": "undefined",
+          "name": "string",
+          "name_localizations": "undefined",
+          "required": "boolean",
+          "type": "number"
+        }
+      ],
+      "type": "number"
+    },
+    {
+      "contexts": "undefined",
+      "default_member_permissions": "undefined",
+      "default_permission": "undefined",
+      "description": "string",
+      "description_localizations": "undefined",
+      "dm_permission": "undefined",
+      "integration_types": "undefined",
+      "name": "string",
+      "name_localizations": "undefined",
+      "nsfw": "undefined",
+      "options": [],
+      "type": "number"
+    },
+    {
+      "contexts": "undefined",
+      "default_member_permissions": "undefined",
+      "default_permission": "undefined",
+      "description": "string",
+      "description_localizations": "undefined",
+      "dm_permission": "undefined",
+      "integration_types": "undefined",
+      "name": "string",
+      "name_localizations": "undefined",
+      "nsfw": "undefined",
+      "options": [],
+      "type": "number"
+    },
+    {
+      "contexts": "undefined",
+      "default_member_permissions": "undefined",
+      "default_permission": "undefined",
+      "description": "string",
+      "description_localizations": "undefined",
+      "dm_permission": "undefined",
+      "integration_types": "undefined",
+      "name": "string",
+      "name_localizations": "undefined",
+      "nsfw": "undefined",
+      "options": [
+        {
+          "autocomplete": "undefined",
+          "choices": "undefined",
+          "description": "string",
+          "description_localizations": "undefined",
+          "max_length": "undefined",
+          "min_length": "undefined",
+          "name": "string",
+          "name_localizations": "undefined",
+          "required": "boolean",
+          "type": "number"
+        },
+        {
+          "description": "string",
+          "description_localizations": "undefined",
+          "name": "string",
+          "name_localizations": "undefined",
+          "required": "boolean",
+          "type": "number"
+        },
+        {
+          "autocomplete": "undefined",
+          "choices": "undefined",
+          "description": "string",
+          "description_localizations": "undefined",
+          "max_length": "undefined",
+          "min_length": "undefined",
+          "name": "string",
+          "name_localizations": "undefined",
+          "required": "boolean",
+          "type": "number"
+        },
+        {
+          "description": "string",
+          "description_localizations": "undefined",
+          "name": "string",
+          "name_localizations": "undefined",
+          "required": "boolean",
+          "type": "number"
+        }
+      ],
+      "type": "number"
+    },
+    {
+      "contexts": "undefined",
+      "default_member_permissions": "undefined",
+      "default_permission": "undefined",
+      "description": "string",
+      "description_localizations": "undefined",
+      "dm_permission": "undefined",
+      "integration_types": "undefined",
+      "name": "string",
+      "name_localizations": "undefined",
+      "nsfw": "undefined",
+      "options": [
+        {
+          "autocomplete": "undefined",
+          "choices": "undefined",
+          "description": "string",
+          "description_localizations": "undefined",
+          "max_length": "undefined",
+          "min_length": "undefined",
+          "name": "string",
+          "name_localizations": "undefined",
+          "required": "boolean",
+          "type": "number"
+        },
+        {
+          "description": "string",
+          "description_localizations": "undefined",
+          "name": "string",
+          "name_localizations": "undefined",
+          "required": "boolean",
+          "type": "number"
+        },
+        {
+          "autocomplete": "undefined",
+          "choices": "undefined",
+          "description": "string",
+          "description_localizations": "undefined",
+          "max_length": "undefined",
+          "min_length": "undefined",
+          "name": "string",
+          "name_localizations": "undefined",
+          "required": "boolean",
+          "type": "number"
+        },
+        {
+          "description": "string",
+          "description_localizations": "undefined",
+          "name": "string",
+          "name_localizations": "undefined",
+          "required": "boolean",
+          "type": "number"
+        }
+      ],
+      "type": "number"
+    },
+    {
+      "contexts": "undefined",
+      "default_member_permissions": "undefined",
+      "default_permission": "undefined",
+      "description": "string",
+      "description_localizations": "undefined",
+      "dm_permission": "undefined",
+      "integration_types": "undefined",
+      "name": "string",
+      "name_localizations": "undefined",
+      "nsfw": "undefined",
+      "options": [
+        {
+          "autocomplete": "undefined",
+          "choices": "undefined",
+          "description": "string",
+          "description_localizations": "undefined",
+          "max_length": "undefined",
+          "min_length": "undefined",
+          "name": "string",
+          "name_localizations": "undefined",
+          "required": "boolean",
+          "type": "number"
+        },
+        {
+          "autocomplete": "undefined",
+          "choices": "undefined",
+          "description": "string",
+          "description_localizations": "undefined",
+          "max_length": "undefined",
+          "min_length": "undefined",
+          "name": "string",
+          "name_localizations": "undefined",
+          "required": "boolean",
+          "type": "number"
+        }
+      ],
+      "type": "number"
+    }
+  ],
+  "registrationPayloadContract": [
+    {
+      "name": "alive",
+      "description": "Check if bot is alive",
+      "defaultMemberPermissions": null,
+      "dmPermission": null,
+      "nsfw": null,
+      "options": []
+    },
+    {
+      "name": "send",
+      "description": "Send content to stream",
+      "defaultMemberPermissions": null,
+      "dmPermission": null,
+      "nsfw": null,
+      "options": [
+        {
+          "name": "link",
+          "description": "Link to the content to display",
+          "type": 3,
+          "required": false,
+          "autocomplete": null,
+          "minValue": null,
+          "maxValue": null,
+          "minLength": null,
+          "maxLength": null,
+          "channelTypes": [],
+          "choices": [],
+          "options": []
+        },
+        {
+          "name": "media",
+          "description": "Media to display",
+          "type": 11,
+          "required": false,
+          "autocomplete": null,
+          "minValue": null,
+          "maxValue": null,
+          "minLength": null,
+          "maxLength": null,
+          "channelTypes": [],
+          "choices": [],
+          "options": []
+        },
+        {
+          "name": "text",
+          "description": "Text to display",
+          "type": 3,
+          "required": false,
+          "autocomplete": null,
+          "minValue": null,
+          "maxValue": null,
+          "minLength": null,
+          "maxLength": null,
+          "channelTypes": [],
+          "choices": [],
+          "options": []
+        },
+        {
+          "name": "refresh",
+          "description": "Bypass media cache and re-download/re-transcode this source",
+          "type": 5,
+          "required": false,
+          "autocomplete": null,
+          "minValue": null,
+          "maxValue": null,
+          "minLength": null,
+          "maxLength": null,
+          "channelTypes": [],
+          "choices": [],
+          "options": []
+        }
+      ]
+    },
+    {
+      "name": "talk",
+      "description": "Ask a bot to say something",
+      "defaultMemberPermissions": null,
+      "dmPermission": null,
+      "nsfw": null,
+      "options": [
+        {
+          "name": "voice",
+          "description": "Text to say",
+          "type": 3,
+          "required": true,
+          "autocomplete": null,
+          "minValue": null,
+          "maxValue": null,
+          "minLength": null,
+          "maxLength": null,
+          "channelTypes": [],
+          "choices": [],
+          "options": []
+        },
+        {
+          "name": "text",
+          "description": "Text to display",
+          "type": 3,
+          "required": false,
+          "autocomplete": null,
+          "minValue": null,
+          "maxValue": null,
+          "minLength": null,
+          "maxLength": null,
+          "channelTypes": [],
+          "choices": [],
+          "options": []
+        }
+      ]
+    },
+    {
+      "name": "pair-code",
+      "description": "Generate a one-time pairing code for Overlay EXE or LiveChat Extension",
+      "defaultMemberPermissions": null,
+      "dmPermission": null,
+      "nsfw": null,
+      "options": [
+        {
+          "name": "mode",
+          "description": "Pairing mode (normal or read-only invite)",
+          "type": 3,
+          "required": false,
+          "autocomplete": null,
+          "minValue": null,
+          "maxValue": null,
+          "minLength": null,
+          "maxLength": null,
+          "channelTypes": [],
+          "choices": [
+            {
+              "name": "normal",
+              "value": "normal"
+            },
+            {
+              "name": "invite (overlay read-only)",
+              "value": "invite"
+            }
+          ],
+          "options": []
+        }
+      ]
+    },
+    {
+      "name": "help",
+      "description": "List of Commands",
+      "defaultMemberPermissions": null,
+      "dmPermission": null,
+      "nsfw": null,
+      "options": []
+    },
+    {
+      "name": "info",
+      "description": "Bot Informations",
+      "defaultMemberPermissions": null,
+      "dmPermission": null,
+      "nsfw": null,
+      "options": []
+    },
+    {
+      "name": "config-defaulttime",
+      "description": "Set default time for display (Default: 5 seconds) (In seconds) | 0 will reset value to default",
+      "defaultMemberPermissions": null,
+      "dmPermission": null,
+      "nsfw": null,
+      "options": [
+        {
+          "name": "number",
+          "description": "Number of seconds",
+          "type": 4,
+          "required": true,
+          "autocomplete": null,
+          "minValue": null,
+          "maxValue": null,
+          "minLength": null,
+          "maxLength": null,
+          "channelTypes": [],
+          "choices": [],
+          "options": []
+        }
+      ]
+    },
+    {
+      "name": "config-displayfull",
+      "description": "Legacy option (kept for compatibility)",
+      "defaultMemberPermissions": null,
+      "dmPermission": null,
+      "nsfw": null,
+      "options": [
+        {
+          "name": "boolean",
+          "description": "True / False",
+          "type": 5,
+          "required": true,
+          "autocomplete": null,
+          "minValue": null,
+          "maxValue": null,
+          "minLength": null,
+          "maxLength": null,
+          "channelTypes": [],
+          "choices": [],
+          "options": []
+        }
+      ]
+    },
+    {
+      "name": "config-maxtime",
+      "description": "Set max time for display (In seconds) | 0 will reset value to default",
+      "defaultMemberPermissions": null,
+      "dmPermission": null,
+      "nsfw": null,
+      "options": [
+        {
+          "name": "number",
+          "description": "Number of seconds",
+          "type": 4,
+          "required": true,
+          "autocomplete": null,
+          "minValue": null,
+          "maxValue": null,
+          "minLength": null,
+          "maxLength": null,
+          "channelTypes": [],
+          "choices": [],
+          "options": []
+        }
+      ]
+    },
+    {
+      "name": "overlays",
+      "description": "List currently connected overlays",
+      "defaultMemberPermissions": null,
+      "dmPermission": null,
+      "nsfw": null,
+      "options": []
+    },
+    {
+      "name": "stop",
+      "description": "Stop current playback",
+      "defaultMemberPermissions": null,
+      "dmPermission": null,
+      "nsfw": null,
+      "options": []
+    },
+    {
+      "name": "meme-add",
+      "description": "Add media to the persistent meme board",
+      "defaultMemberPermissions": null,
+      "dmPermission": null,
+      "nsfw": null,
+      "options": [
+        {
+          "name": "link",
+          "description": "Link to media to store in meme board",
+          "type": 3,
+          "required": false,
+          "autocomplete": null,
+          "minValue": null,
+          "maxValue": null,
+          "minLength": null,
+          "maxLength": null,
+          "channelTypes": [],
+          "choices": [],
+          "options": []
+        },
+        {
+          "name": "media",
+          "description": "Attachment media to store in meme board",
+          "type": 11,
+          "required": false,
+          "autocomplete": null,
+          "minValue": null,
+          "maxValue": null,
+          "minLength": null,
+          "maxLength": null,
+          "channelTypes": [],
+          "choices": [],
+          "options": []
+        },
+        {
+          "name": "title",
+          "description": "Optional display title for meme board",
+          "type": 3,
+          "required": false,
+          "autocomplete": null,
+          "minValue": null,
+          "maxValue": null,
+          "minLength": null,
+          "maxLength": null,
+          "channelTypes": [],
+          "choices": [],
+          "options": []
+        },
+        {
+          "name": "refresh",
+          "description": "Bypass media cache and re-download/re-transcode this source",
+          "type": 5,
+          "required": false,
+          "autocomplete": null,
+          "minValue": null,
+          "maxValue": null,
+          "minLength": null,
+          "maxLength": null,
+          "channelTypes": [],
+          "choices": [],
+          "options": []
+        }
+      ]
+    },
+    {
+      "name": "hsend",
+      "description": "Send content to stream (hidden 😈)",
+      "defaultMemberPermissions": null,
+      "dmPermission": null,
+      "nsfw": null,
+      "options": [
+        {
+          "name": "link",
+          "description": "Link to the content to display",
+          "type": 3,
+          "required": false,
+          "autocomplete": null,
+          "minValue": null,
+          "maxValue": null,
+          "minLength": null,
+          "maxLength": null,
+          "channelTypes": [],
+          "choices": [],
+          "options": []
+        },
+        {
+          "name": "media",
+          "description": "Media to display",
+          "type": 11,
+          "required": false,
+          "autocomplete": null,
+          "minValue": null,
+          "maxValue": null,
+          "minLength": null,
+          "maxLength": null,
+          "channelTypes": [],
+          "choices": [],
+          "options": []
+        },
+        {
+          "name": "text",
+          "description": "Text to display",
+          "type": 3,
+          "required": false,
+          "autocomplete": null,
+          "minValue": null,
+          "maxValue": null,
+          "minLength": null,
+          "maxLength": null,
+          "channelTypes": [],
+          "choices": [],
+          "options": []
+        },
+        {
+          "name": "refresh",
+          "description": "Bypass media cache and re-download/re-transcode this source",
+          "type": 5,
+          "required": false,
+          "autocomplete": null,
+          "minValue": null,
+          "maxValue": null,
+          "minLength": null,
+          "maxLength": null,
+          "channelTypes": [],
+          "choices": [],
+          "options": []
+        }
+      ]
+    },
+    {
+      "name": "htalk",
+      "description": "Ask a bot to say something (hidden 😈)",
+      "defaultMemberPermissions": null,
+      "dmPermission": null,
+      "nsfw": null,
+      "options": [
+        {
+          "name": "voice",
+          "description": "Text to say",
+          "type": 3,
+          "required": true,
+          "autocomplete": null,
+          "minValue": null,
+          "maxValue": null,
+          "minLength": null,
+          "maxLength": null,
+          "channelTypes": [],
+          "choices": [],
+          "options": []
+        },
+        {
+          "name": "text",
+          "description": "Text to display",
+          "type": 3,
+          "required": false,
+          "autocomplete": null,
+          "minValue": null,
+          "maxValue": null,
+          "minLength": null,
+          "maxLength": null,
+          "channelTypes": [],
+          "choices": [],
+          "options": []
+        }
+      ]
+    }
+  ]
+}

@@ -25,6 +25,7 @@ const loadSuites = async () => {
   const { runRestOverlayPairConsumeCharacterization } = await import('./restOverlayPairConsume.characterization');
   const { runSocketLifecycleCharacterization } = await import('./socketLifecycle.characterization');
   const { runDiscordExecutionCharacterization } = await import('./discordExecution.characterization');
+  const { runDiscordRegistrationCharacterization } = await import('./discordRegistration.characterization');
   const { runMediaLifecycleCharacterization } = await import('./mediaLifecycle.characterization');
 
   return [
@@ -43,6 +44,10 @@ const loadSuites = async () => {
     {
       name: 'discord-execution-flow',
       run: runDiscordExecutionCharacterization,
+    },
+    {
+      name: 'discord-registration',
+      run: runDiscordRegistrationCharacterization,
     },
     {
       name: 'media-lifecycle',

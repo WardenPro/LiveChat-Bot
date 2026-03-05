@@ -34,5 +34,23 @@
       ],
       "ephemeral": "boolean"
     }
+  },
+  "helpCommandInteraction": {
+    "replyCallCount": 1,
+    "followUpCallCount": 0,
+    "replyShape": {
+      "embeds": [
+        {
+          "data": {
+            "description": "string",
+            "title": "string"
+          }
+        }
+      ],
+      "ephemeral": "boolean"
+    },
+    "replyTitle": "Commands :",
+    "replyDescription": "`/alive`, `/help`, `/send`",
+    "ephemeral": true
   }
 }

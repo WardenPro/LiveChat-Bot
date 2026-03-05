@@ -310,7 +310,7 @@
     {
       "id": "US-004",
       "title": "Refactor socket loader lifecycle with strict boundaries",
-      "status": "in_progress",
+      "status": "done",
       "dependsOn": [
         "US-002"
       ],
@@ -323,13 +323,13 @@
         "No new global mutable state is introduced outside existing runtime wiring constraints."
       ],
       "startedAt": "2026-03-05T08:52:35.848976+00:00",
-      "completedAt": null,
-      "updatedAt": "2026-03-05T08:52:35.849153+00:00"
+      "completedAt": "2026-03-05T09:04:46.084334+00:00",
+      "updatedAt": "2026-03-05T09:04:46.084134+00:00"
     },
     {
       "id": "US-005",
       "title": "Refactor Discord command loading and execution flow",
-      "status": "open",
+      "status": "in_progress",
       "dependsOn": [
         "US-002"
       ],
@@ -340,7 +340,10 @@
         "Example: /help command returns the same embed/message content and status behavior as baseline.",
         "Negative case: unknown or failing command interaction is handled safely without process crash and with baseline-equivalent user-facing outcome.",
         "Characterization checks confirm no contract drift in command registration payload shape."
-      ]
+      ],
+      "startedAt": "2026-03-05T09:04:48.190827+00:00",
+      "completedAt": null,
+      "updatedAt": "2026-03-05T09:04:48.191026+00:00"
     },
     {
       "id": "US-006",

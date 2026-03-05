@@ -1,9 +1,10 @@
-import Module from 'module';
+import { helpCommand } from '../components/discord/helpCommand';
+import { registerDiscordInteractionExecutionHandler } from '../loaders/discord/interactionExecution';
 
 import { ensureCharacterizationGlobals, toValueShape } from './utils';
 
 interface FakeDiscordCommand {
-  handler: (interaction: FakeDiscordInteraction) => Promise<void>;
+  handler: (interaction: FakeDiscordInteraction, discordClient?: unknown) => Promise<void> | void;
 }
 
 interface FakeDiscordInteraction {
@@ -33,62 +34,6 @@ class FakeDiscordClient {
     }
   }
 }
-
-const makeStubCommandFactory = (name: string) => {
-  return () => ({
-    data: {
-      name,
-      toJSON: () => ({
-        name,
-      }),
-    },
-    handler: async () => undefined,
-  });
-};
-
-const loadDiscordCommandsHandler = async () => {
-  const moduleLoader = Module as unknown as {
-    _load: (request: string, parent: unknown, isMain: boolean) => unknown;
-  };
-
-  const commandModuleStubs = new Map<string, Record<string, unknown>>([
-    ['../components/discord/aliveCommand', { aliveCommand: makeStubCommandFactory('alive') }],
-    ['../components/messages/sendCommand', { sendCommand: makeStubCommandFactory('send') }],
-    ['../components/messages/hidesendCommand', { hideSendCommand: makeStubCommandFactory('hidesend') }],
-    ['../components/messages/talkCommand', { talkCommand: makeStubCommandFactory('talk') }],
-    ['../components/messages/hidetalkCommand', { hideTalkCommand: makeStubCommandFactory('hidetalk') }],
-    ['../components/discord/clientCommand', { overlayCodeCommand: makeStubCommandFactory('client') }],
-    ['../components/discord/helpCommand', { helpCommand: makeStubCommandFactory('help') }],
-    ['../components/discord/infoCommand', { infoCommand: makeStubCommandFactory('info') }],
-    ['../components/discord/setDefaultTimeCommand', { setDefaultTimeCommand: makeStubCommandFactory('setdefault') }],
-    [
-      '../components/discord/setDisplayFullCommand',
-      { setDisplayMediaFullCommand: makeStubCommandFactory('setdisplayfull') },
-    ],
-    ['../components/discord/setMaxTimeCommand', { setMaxTimeCommand: makeStubCommandFactory('setmaxtime') }],
-    ['../components/discord/overlaysCommand', { overlaysCommand: () => makeStubCommandFactory('overlays')() }],
-    ['../components/messages/stopCommand', { stopCommand: () => makeStubCommandFactory('stop')() }],
-    ['../components/discord/memeAddCommand', { memeAddCommand: makeStubCommandFactory('memeadd') }],
-  ]);
-
-  const originalLoad = moduleLoader._load;
-
-  moduleLoader._load = (request: string, parent: unknown, isMain: boolean) => {
-    const stubbedModule = commandModuleStubs.get(request);
-    if (stubbedModule) {
-      return stubbedModule;
-    }
-
-    return originalLoad(request, parent, isMain);
-  };
-
-  try {
-    const loaderModule = await import('../loaders/DiscordLoader');
-    return loaderModule.loadDiscordCommandsHandler;
-  } finally {
-    moduleLoader._load = originalLoad;
-  }
-};
 
 const createInteraction = (params: {
   commandName: string;
@@ -121,8 +66,35 @@ const createInteraction = (params: {
   };
 };
 
+const readEmbedValue = (payload: unknown, key: 'title' | 'description') => {
+  if (!payload || typeof payload !== 'object') {
+    return null;
+  }
+
+  const embeds = (payload as { embeds?: unknown }).embeds;
+
+  if (!Array.isArray(embeds) || embeds.length === 0) {
+    return null;
+  }
+
+  const firstEmbed = embeds[0] as { data?: Record<string, unknown> };
+  const value = firstEmbed?.data?.[key];
+
+  return typeof value === 'string' ? value : null;
+};
+
+const readEphemeralFlag = (payload: unknown) => {
+  if (!payload || typeof payload !== 'object') {
+    return null;
+  }
+
+  const ephemeral = (payload as { ephemeral?: unknown }).ephemeral;
+  return typeof ephemeral === 'boolean' ? ephemeral : null;
+};
+
 export const runDiscordExecutionCharacterization = async () => {
   ensureCharacterizationGlobals();
+  global.commandsLoaded = ['alive', 'help', 'send'];
 
   const fakeDiscordClient = new FakeDiscordClient();
   fakeDiscordClient.commands.set('explode', {
@@ -130,11 +102,11 @@ export const runDiscordExecutionCharacterization = async () => {
       throw new Error('handler_failed');
     },
   });
+  fakeDiscordClient.commands.set('help', helpCommand() as unknown as FakeDiscordCommand);
 
   global.discordClient = fakeDiscordClient as any;
 
-  const registerHandler = await loadDiscordCommandsHandler();
-  registerHandler();
+  registerDiscordInteractionExecutionHandler(fakeDiscordClient as any);
 
   const unknownCommand = createInteraction({
     commandName: 'unknown-command',
@@ -158,6 +130,14 @@ export const runDiscordExecutionCharacterization = async () => {
 
   await fakeDiscordClient.emit('interactionCreate', failingCommandWithReply.interaction);
 
+  const helpCommandInteraction = createInteraction({
+    commandName: 'help',
+  });
+
+  await fakeDiscordClient.emit('interactionCreate', helpCommandInteraction.interaction);
+
+  const helpReply = helpCommandInteraction.replies.length > 0 ? helpCommandInteraction.replies[0] : null;
+
   return {
     unknownCommandInteraction: {
       replyCallCount: unknownCommand.replies.length,
@@ -174,6 +154,14 @@ export const runDiscordExecutionCharacterization = async () => {
       followUpCallCount: failingCommandWithReply.followUps.length,
       followUpShape:
         failingCommandWithReply.followUps.length > 0 ? toValueShape(failingCommandWithReply.followUps[0]) : null,
+    },
+    helpCommandInteraction: {
+      replyCallCount: helpCommandInteraction.replies.length,
+      followUpCallCount: helpCommandInteraction.followUps.length,
+      replyShape: helpReply ? toValueShape(helpReply) : null,
+      replyTitle: readEmbedValue(helpReply, 'title'),
+      replyDescription: readEmbedValue(helpReply, 'description'),
+      ephemeral: readEphemeralFlag(helpReply),
     },
   };
 };

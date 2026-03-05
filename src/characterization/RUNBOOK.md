@@ -9,6 +9,7 @@ This runbook defines the pre-refactor safety loop introduced for `US-001`.
 - REST contract: `POST /overlay/pair/consume` (valid + malformed payload)
 - Socket lifecycle: overlay auth, connect/heartbeat/disconnect side effects, peers emission shape
 - Discord command execution flow: unknown command path and failing command recovery path
+- Discord command registration contract: command list and registration payload shape
 - Media lifecycle: cache touch, non-persistent budget eviction, expired/stale purge behavior
 
 Baselines are versioned in `src/characterization/baselines/*.baseline.json`.

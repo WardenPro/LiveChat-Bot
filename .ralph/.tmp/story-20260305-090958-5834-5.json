@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "total": 14,
+  "remaining": 10,
+  "quality_gates": [
+    "pnpm lint",
+    "pnpm build"
+  ],
+  "id": "US-005",
+  "title": "Refactor Discord command loading and execution flow"
+}
