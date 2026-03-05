@@ -48,3 +48,39 @@ Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/ru
   - Useful context
     - Latest characterization artifacts are emitted under `.ralph/characterization/latest/` for diff inspection when a baseline check fails.
 ---
+## [2026-03-05 09:39:58 CET] - US-002: Define module boundaries and compatibility map
+Thread: 
+Run: 20260305-090958-5834 (iteration 2)
+Run log: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-090958-5834-iter-2.log
+Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-090958-5834-iter-2.md
+- Guardrails reviewed: yes
+- No-commit run: false
+- Commit: c854afb refactor(architecture): define module boundaries map (or `none` + reason)
+- Post-commit status: `clean`
+- Verification:
+  - Command: pnpm lint -> PASS
+  - Command: pnpm build -> PASS
+  - Command: API_URL=http://localhost:3333 DISCORD_TOKEN=test DISCORD_CLIENT_ID=test DATABASE_URL=file:./sqlite.db pnpm dev -> FAIL (existing runtime import error: file-type package export mismatch)
+- Files changed:
+  - .agents/tasks/prd-livechat-refactor.json
+  - .ralph/.tmp/prompt-20260305-090958-5834-2.md
+  - .ralph/.tmp/story-20260305-090958-5834-2.json
+  - .ralph/.tmp/story-20260305-090958-5834-2.md
+  - .ralph/runs/run-20260305-090958-5834-iter-1.md
+  - src/architecture/module-boundaries.md
+  - src/repositories/prisma/loadPrisma.ts
+  - src/repositories/prisma/prismaEnums.ts
+  - src/services/prisma/loadPrisma.ts
+  - src/services/prisma/prismaEnums.ts
+- What was implemented
+  - Added a tracked architecture document defining full module boundaries, approved/prohibited dependency directions, compatibility constraints, and explicit out-of-scope entrypoint move rejections for US-002.
+  - Moved Prisma internal modules into the new repository layer (`src/repositories/prisma/*`) and preserved legacy internal paths (`src/services/prisma/*`) via compatibility re-export wrappers.
+  - Preserved behavior by keeping existing import paths valid and by avoiding any route/socket/env entrypoint changes.
+- **Learnings for future iterations:**
+  - Patterns discovered
+    - A low-risk boundary migration slice is to move storage-access internals first and keep old import paths alive with thin wrappers.
+  - Gotchas encountered
+    - `pnpm lint` runs with `--fix` and can modify unrelated files; scope must be restored before commit when story boundaries are strict.
+  - Useful context
+    - `docs/` is gitignored in this repository; architecture documentation for tracked changes should live under `src/` or another tracked path.
+---
