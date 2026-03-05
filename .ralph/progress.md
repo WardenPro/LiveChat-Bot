@@ -84,3 +84,46 @@ Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/ru
   - Useful context
     - `docs/` is gitignored in this repository; architecture documentation for tracked changes should live under `src/` or another tracked path.
 ---
+## [2026-03-05 09:51:40 CET] - US-003: Refactor REST route loading into domain modules
+Thread: 
+Run: 20260305-090958-5834 (iteration 3)
+Run log: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-090958-5834-iter-3.log
+Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-090958-5834-iter-3.md
+- Guardrails reviewed: yes
+- No-commit run: false
+- Commit: 8562392 refactor(rest): split route loading by domain (or `none` + reason)
+- Post-commit status: `clean`
+- Verification:
+  - Command: pnpm characterization -> PASS
+  - Command: pnpm lint -> PASS
+  - Command: pnpm build -> PASS
+  - Command: API_URL=http://localhost:3333 DISCORD_TOKEN=test DISCORD_CLIENT_ID=test DATABASE_URL=file:./sqlite.db pnpm dev -> FAIL (existing runtime import error: file-type package export mismatch)
+- Files changed:
+  - .agents/tasks/prd-livechat-refactor.json
+  - .ralph/.tmp/prompt-20260305-090958-5834-3.md
+  - .ralph/.tmp/story-20260305-090958-5834-3.json
+  - .ralph/.tmp/story-20260305-090958-5834-3.md
+  - .ralph/characterization/latest/rest-route-domains.latest.json
+  - .ralph/runs/run-20260305-090958-5834-iter-2.md
+  - src/characterization/RUNBOOK.md
+  - src/characterization/baselines/rest-route-domains.baseline.json
+  - src/characterization/restRouteDomains.characterization.ts
+  - src/characterization/runCharacterization.ts
+  - src/loaders/RESTLoader.ts
+  - src/loaders/rest/adminDomainRegistrar.ts
+  - src/loaders/rest/ingestDomainRegistrar.ts
+  - src/loaders/rest/overlayDomainRegistrar.ts
+  - src/loaders/rest/registerDomainRoutes.ts
+- What was implemented
+  - Added REST-domain characterization coverage (`rest-route-domains`) to lock contracts across overlay/admin/ingest plus unsupported-path not-found behavior.
+  - Refactored `loadRoutes` internals into explicit domain registrars (`admin`, `overlay`, `ingest`) using a shared registrar utility while preserving route prefixes and route-loaded logging behavior.
+  - Added baseline and latest characterization artifact for the new suite and updated the characterization runbook scope.
+- **Learnings for future iterations:**
+  - Patterns discovered
+    - Loader-only refactors can stay low risk by extracting registration orchestration while keeping route handler modules untouched.
+  - Gotchas encountered
+    - `pnpm lint` (`--fix`) still touches unrelated legacy files; restore non-story files before staging to keep strict story scope.
+    - Characterization suites that patch module loads can contaminate later suites via module cache if core auth modules are stubbed globally.
+  - Useful context
+    - The existing `pnpm dev` runtime failure (`ERR_PACKAGE_PATH_NOT_EXPORTED` from `file-type`) remains unrelated to US-003 and still reproduces.
+---
