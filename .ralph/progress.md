@@ -987,3 +987,44 @@ Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/ru
   - Useful context
     - `pnpm test:unit:matrix` now reports all `src/components/discord/*` modules as covered while remaining failures are in future US-010/US-011 scope.
 ---
+## [2026-03-05 15:46:32 CET] - US-010: Backfill tests for message command modules
+Thread: 
+Run: 20260305-135706-86234 (iteration 10)
+Run log: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-135706-86234-iter-10.log
+Run summary: /Users/maxence/Développement/LiveChat/LiveChat-Bot/.ralph/runs/run-20260305-135706-86234-iter-10.md
+- Guardrails reviewed: yes
+- No-commit run: false
+- Commit: 214730d test(messages): backfill command module unit tests (or `none` + reason)
+- Post-commit status: `clean`
+- Verification:
+  - Command: pnpm lint -> PASS
+  - Command: pnpm build -> PASS
+  - Command: pnpm characterization -> PASS
+  - Command: pnpm test:unit -> PASS
+  - Command: pnpm test:unit:matrix -> FAIL (expected at this stage; remaining uncovered modules are outside US-010 scope)
+  - Command: API_URL=http://localhost:3333 DISCORD_TOKEN=test DISCORD_CLIENT_ID=test DATABASE_URL=file:./sqlite.db pnpm dev -> FAIL (expected with placeholder Discord credentials; service boot completed before Discord auth failure)
+- Files changed:
+  - .agents/tasks/prd-module-unit-tests.json
+  - .ralph/.tmp/prompt-20260305-135706-86234-10.md
+  - .ralph/.tmp/story-20260305-135706-86234-10.json
+  - .ralph/.tmp/story-20260305-135706-86234-10.md
+  - .ralph/runs/run-20260305-135706-86234-iter-9.md
+  - tests/unit/components/messages/hidesendCommand.test.ts
+  - tests/unit/components/messages/hidetalkCommand.test.ts
+  - tests/unit/components/messages/messagesWorker.test.ts
+  - tests/unit/components/messages/sendCommand.test.ts
+  - tests/unit/components/messages/stopCommand.test.ts
+  - tests/unit/components/messages/talkCommand.test.ts
+- What was implemented
+  - Added isolated unit tests for all modules under `src/components/messages/*`: `sendCommand`, `hideSendCommand`, `talkCommand`, `hideTalkCommand`, `stopCommand`, and `messagesWorker`.
+  - Validated message payload construction and downstream scheduling calls for send/talk flows, including rich media start-offset encoding and worker overlay payload emission.
+  - Added refusal/error-path tests ensuring empty content and voice-generation failures do not trigger outbound playback side effects, while preserving localized response behavior.
+  - Added scheduling and no-client negative-path coverage for `messagesWorker` and verified all message modules are now listed as covered in matrix output.
+- **Learnings for future iterations:**
+  - Patterns discovered
+    - Command-module tests are stable when Discord interaction objects are represented by minimal stubs and all external media/social services are fully mocked.
+  - Gotchas encountered
+    - `talkCommand` and `hideTalkCommand` call `.catch()` on `deleteGtts`, so mocks must return promises (for example `mockResolvedValue(undefined)`) to avoid false-negative test failures.
+  - Useful context
+    - `pnpm test:unit:matrix` missing-module count dropped from 26 to 20; all `src/components/messages/*` modules are now covered and remaining gaps are in future US-011 scope.
+---
